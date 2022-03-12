@@ -4,17 +4,6 @@ use std::fmt;
 
 use crate::notion_database_schema::{parse_database_schema, NotionDatabaseSchema};
 
-#[derive(Debug, Clone)]
-struct ResponseParseError;
-
-impl fmt::Display for ResponseParseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "failed to parse response")
-    }
-}
-
-impl Error for ResponseParseError {}
-
 pub struct NotionClient {
     pub api_key: String,
 }
@@ -28,10 +17,9 @@ impl NotionClient {
             .header("Authorization", "Bearer ".to_string() + &self.api_key)
             .header("Notion-Version", "2022-02-22")
             .send()?
-            .json::<Value>()?;
+            .text()?;
 
-        let schema = parse_database_schema(&resp).ok_or(ResponseParseError)?;
-        Ok(schema)
+        parse_database_schema(&resp)
     }
 
     pub fn get_all_columns(&self, database_id: &str) -> Result<Value, Box<dyn Error>> {

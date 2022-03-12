@@ -1,4 +1,6 @@
 use serde_json::Value;
+use std::error::Error;
+use std::fmt;
 
 #[derive(Debug)]
 pub enum NotionPropertyType {
@@ -20,8 +22,31 @@ pub struct NotionDatabaseSchema {
     pub properties: Vec<NotionProperty>,
 }
 
-pub fn parse_database_schema(database_resp: &Value) -> Option<NotionDatabaseSchema> {
-    let raw_properties = database_resp.as_object()?.get("properties")?.as_object()?;
+#[derive(Debug, Clone)]
+struct InvalidDatabaseObjectError(String);
+impl fmt::Display for InvalidDatabaseObjectError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let message = self.0.as_str();
+        write!(f, "Invalid database object. {}", message)
+    }
+}
+impl Error for InvalidDatabaseObjectError {}
+
+pub fn parse_database_schema(
+    database_resp_json: &str,
+) -> Result<NotionDatabaseSchema, Box<dyn Error>> {
+    let database_resp = serde_json::from_str::<Value>(database_resp_json)?;
+
+    validate_object_type(&database_resp);
+
+    let raw_properties = database_resp
+        .as_object()
+        .and_then(|resp| resp.get("properties"))
+        .and_then(|prop| prop.as_object())
+        .ok_or(InvalidDatabaseObjectError(
+            r#"It must have "properties" object."#.to_string(),
+        ))?;
+
     let properties = raw_properties
         .keys()
         .filter_map(|key| {
@@ -42,13 +67,34 @@ pub fn parse_database_schema(database_resp: &Value) -> Option<NotionDatabaseSche
         })
         .collect::<Vec<NotionProperty>>();
 
-    Some(NotionDatabaseSchema { properties })
+    Ok(NotionDatabaseSchema { properties })
+}
+
+fn validate_object_type(database_resp: &Value) -> Result<(), InvalidDatabaseObjectError> {
+    let object_field = database_resp
+        .as_object()
+        .and_then(|o| o.get("object"))
+        .and_then(|o| o.as_str())
+        .ok_or(InvalidDatabaseObjectError(
+            r#"It must have `"object": "database"`."#.to_string(),
+        ))?;
+
+    if object_field == "database" {
+        Ok(())
+    } else {
+        Err(InvalidDatabaseObjectError(format!(
+            r#"It must have `"object": "database"`, but was "{}""#,
+            object_field
+        )))
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
-    fn parse_database_schema() {
+    fn test_parse_database_schema() {
         let data = r#"
         {
             "object": "database",
@@ -121,8 +167,18 @@ mod tests {
             }
         }
         "#;
-        let json = serde_json::from_str(data).unwrap();
-        let schema = super::parse_database_schema(&json).unwrap();
+        let schema = parse_database_schema(&data).unwrap();
         assert_eq!(schema.properties.len(), 3);
+    }
+
+    #[test]
+    fn test_validate_object_type() {
+        let data = r#"
+        {
+            "object": "database"
+        }
+        "#;
+        let json = serde_json::from_str(data).unwrap();
+        assert_eq!(validate_object_type(&json).is_ok(), true);
     }
 }
