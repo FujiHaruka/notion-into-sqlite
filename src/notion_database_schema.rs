@@ -37,7 +37,7 @@ pub fn parse_database_schema(
 ) -> Result<NotionDatabaseSchema, Box<dyn Error>> {
     let database_resp = serde_json::from_str::<Value>(database_resp_json)?;
 
-    validate_object_type(&database_resp);
+    validate_object_type(&database_resp)?;
 
     let raw_properties = database_resp
         .as_object()
@@ -180,5 +180,19 @@ mod tests {
         "#;
         let json = serde_json::from_str(data).unwrap();
         assert_eq!(validate_object_type(&json).is_ok(), true);
+
+        let data = r#"
+        {
+            "object": "xxx"
+        }
+        "#;
+        let json = serde_json::from_str(data).unwrap();
+        assert_eq!(validate_object_type(&json).is_err(), true);
+
+        let data = r#"
+        {}
+        "#;
+        let json = serde_json::from_str(data).unwrap();
+        assert_eq!(validate_object_type(&json).is_err(), true);
     }
 }
