@@ -1,17 +1,21 @@
 use serde_json::Value;
 
+#[derive(Debug)]
 pub enum NotionPropertyType {
-    Str,
+    Title,
     Number,
+    Select,
     Other,
 }
 
+#[derive(Debug)]
 pub struct NotionProperty {
     pub name: String,
     pub property_type: NotionPropertyType,
     pub property_raw_type: String,
 }
 
+#[derive(Debug)]
 pub struct NotionDatabaseSchema {
     pub properties: Vec<NotionProperty>,
 }
@@ -25,7 +29,8 @@ pub fn parse_database_schema(database_resp: &Value) -> Option<NotionDatabaseSche
             let name = property.get("name")?.as_str()?;
             let property_raw_type = property.get("type")?.as_str()?;
             let property_type = match property_raw_type {
-                "title" | "rich_text" | "url" | "email" | "phone_number" => NotionPropertyType::Str,
+                "title" => NotionPropertyType::Title,
+                "select" => NotionPropertyType::Select,
                 "number" => NotionPropertyType::Number,
                 _ => NotionPropertyType::Other,
             };
