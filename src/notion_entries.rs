@@ -1,6 +1,8 @@
-use crate::notion_database_schema::{NotionDatabaseSchema};
+use crate::notion_database_schema::NotionDatabaseSchema;
 use serde_json::Value;
-use std::collection::HashMap;
+use std::collections::HashMap;
+use std::error::Error;
+use std::fmt;
 
 pub enum NotionEntryValue {
     Text(String),
@@ -10,14 +12,52 @@ pub enum NotionEntryValue {
 
 type NotionEntry = HashMap<String, NotionEntryValue>;
 
-pub fn parse_notion_entries(schema: &NotionDatabaseSchema, query_resp: &Value) -> Option<Vec<NotionEntry>> {
-    None
+#[derive(Debug, Clone)]
+struct InvalidListObjectError(String);
+impl fmt::Display for InvalidListObjectError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let message = self.0.as_str();
+        write!(f, "Invalid list object. {}", message)
+    }
+}
+impl Error for InvalidListObjectError {}
+
+pub fn parse_notion_entries(
+    schema: &NotionDatabaseSchema,
+    query_resp_json: &str,
+) -> Result<Vec<NotionEntry>, Box<dyn Error>> {
+    let query_resp = serde_json::from_str(query_resp_json)?;
+
+    validate_object_type(&query_resp)?;
+
+    Ok(vec![])
+}
+
+fn validate_object_type(query_resp: &Value) -> Result<(), InvalidListObjectError> {
+    let object_field = query_resp
+        .as_object()
+        .and_then(|o| o.get("object"))
+        .and_then(|o| o.as_str())
+        .ok_or(InvalidListObjectError(
+            r#"It must have `"object": "list"`."#.to_string(),
+        ))?;
+
+    if object_field == "list" {
+        Ok(())
+    } else {
+        Err(InvalidListObjectError(format!(
+            r#"It must have `"object": "list"`, but was "{}""#,
+            object_field
+        )))
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
-    fn parse_query_result() {
+    fn test_parse_query_result() {
         let data = r#"
         {
             "object": "list",
@@ -90,5 +130,30 @@ mod tests {
             "page": {}
         }
         "#;
+    }
+
+    #[test]
+    fn test_validate_object_type() {
+        let data = r#"
+        {
+            "object": "list"
+        }
+        "#;
+        let json = serde_json::from_str(data).unwrap();
+        assert_eq!(validate_object_type(&json).is_ok(), true);
+
+        let data = r#"
+        {
+            "object": "xxx"
+        }
+        "#;
+        let json = serde_json::from_str(data).unwrap();
+        assert_eq!(validate_object_type(&json).is_err(), true);
+
+        let data = r#"
+        {}
+        "#;
+        let json = serde_json::from_str(data).unwrap();
+        assert_eq!(validate_object_type(&json).is_err(), true);
     }
 }

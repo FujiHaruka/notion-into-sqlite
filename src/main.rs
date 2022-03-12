@@ -1,5 +1,6 @@
 mod notion_client;
 mod notion_database_schema;
+mod notion_entries;
 
 use std::env;
 
