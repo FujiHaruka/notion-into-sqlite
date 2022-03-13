@@ -135,6 +135,7 @@ fn get_next_cursor(query_resp: &Value) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
+    use crate::notion_database_schema::NotionProperty;
     use super::*;
 
     #[test]
@@ -211,6 +212,31 @@ mod tests {
             "page": {}
         }
         "#;
+        let schema = NotionDatabaseSchema{
+            properties: HashMap::from([
+                ("Name".to_string(), NotionProperty{
+                    name: "Name".to_string(),
+                    property_raw_type: "title".to_string(),
+                    property_type: NotionPropertyType::Title,
+                }),
+                ("Age".to_string(), NotionProperty{
+                    name: "Age".to_string(),
+                    property_raw_type: "number".to_string(),
+                    property_type: NotionPropertyType::Number,
+                }),
+                ("Animal".to_string(), NotionProperty{
+                    name: "Animal".to_string(),
+                    property_raw_type: "select".to_string(),
+                    property_type: NotionPropertyType::Select,
+                })
+            ])
+        };
+        let (list, next_cursor) = parse_notion_list(&schema, &data).unwrap();
+        assert_eq!(next_cursor.unwrap(), "e6c9af10-44ec-4a48-a969-156ba5438ff0");
+        assert_eq!(list.len(), 1);
+        let entry = list.first().unwrap();
+        assert_eq!(entry.id, "a75b9220-455d-48e1-a36b-c581a345f777");
+        assert_eq!(entry.properties.len(), 3);
     }
 
     #[test]

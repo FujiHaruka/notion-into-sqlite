@@ -27,6 +27,7 @@ pub fn dig_json<'a>(source: &'a Value, keys: &Vec<JsonKey>) -> Option<&'a Value>
     Some(value)
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 

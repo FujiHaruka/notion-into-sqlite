@@ -13,5 +13,5 @@ fn main() {
     let schema = client.get_database(&database_id).unwrap();
     let list = client.get_all_entries(&database_id, &schema).unwrap();
 
-    println!("{:?}", list);
+    println!("spam!spam!spam!spam!{:?}", list);
 }
