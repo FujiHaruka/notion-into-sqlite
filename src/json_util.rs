@@ -1,5 +1,6 @@
 use serde_json::Value;
 
+#[derive(Debug)]
 pub enum JsonKey<'a> {
     String(&'a str),
     Index(usize),

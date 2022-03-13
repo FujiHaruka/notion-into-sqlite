@@ -1,18 +1,71 @@
+use crate::json_util::{dig_json, JsonKey};
 use crate::notion_database_schema::{NotionDatabaseSchema, NotionPropertyType};
-use serde_json::Value;
+use serde_json::{Map, Value};
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
 
+#[derive(Debug)]
 pub enum NotionPropertyValue {
     Text(String),
     Number(f64),
     Json(Value),
 }
 
+#[derive(Debug)]
 pub struct NotionEntry {
     id: String,
     properties: HashMap<String, NotionPropertyValue>,
+}
+
+#[derive(Debug)]
+struct NotionEntryBuilder<'a> {
+    schema: &'a NotionDatabaseSchema,
+    title_json_path: Vec<JsonKey<'a>>,
+    number_json_path: Vec<JsonKey<'a>>,
+    select_json_path: Vec<JsonKey<'a>>,
+}
+impl NotionEntryBuilder<'_> {
+    fn new<'a>(schema: &'a NotionDatabaseSchema) -> NotionEntryBuilder<'a> {
+        NotionEntryBuilder {
+            schema,
+            title_json_path: vec!["title".into(), 0.into(), "plain_text".into()],
+            number_json_path: vec!["number".into()],
+            select_json_path: vec!["select".into(), "name".into()],
+        }
+    }
+
+    fn from(&self, json_entry: &Map<String, Value>) -> Option<NotionEntry> {
+        let id = json_entry.get("id")?.as_str()?.to_string();
+        let properties_object = json_entry.get("properties")?.as_object()?;
+        let properties = properties_object
+            .iter()
+            .filter_map(|(key, property)| {
+                let property_schema = self.schema.properties.get(key)?;
+                let value: NotionPropertyValue = match &property_schema.property_type {
+                    &NotionPropertyType::Title => NotionPropertyValue::Text(
+                        dig_json(property, &self.title_json_path)?
+                            .as_str()?
+                            .to_string(),
+                    ),
+                    &NotionPropertyType::Number => NotionPropertyValue::Number(
+                        dig_json(property, &self.number_json_path)?.as_f64()?,
+                    ),
+                    &NotionPropertyType::Select => NotionPropertyValue::Text(
+                        dig_json(property, &self.select_json_path)?
+                            .as_str()?
+                            .to_string(),
+                    ),
+                    &NotionPropertyType::Other => NotionPropertyValue::Json(
+                        property.get(&property_schema.property_raw_type)?.clone(),
+                    ),
+                };
+                Some((key.to_string(), value))
+            })
+            .collect::<HashMap<String, NotionPropertyValue>>();
+
+        Some(NotionEntry { id, properties })
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -33,9 +86,8 @@ pub fn parse_notion_list(
 
     validate_object_type(&query_resp)?;
 
-    let results = query_resp
-        .as_object()
-        .and_then(|resp| resp.get("results"))
+    let results_json_keys = vec![JsonKey::String("results")];
+    let results = dig_json(&query_resp, &results_json_keys)
         .and_then(|results| results.as_array())
         .map(|results| {
             results
@@ -46,63 +98,19 @@ pub fn parse_notion_list(
         .ok_or(InvalidListObjectError(
             r#"It must have "results" as arrray of objects."#.to_string(),
         ))?;
+
+    let entry_builder = NotionEntryBuilder::new(schema);
     let entries: Vec<NotionEntry> = results
         .iter()
-        .filter_map(|result| {
-            let id = result.get("id")?.as_str()?.to_string();
-            let properties_object = result.get("properties")?.as_object()?;
-            let properties = properties_object
-                .iter()
-                .filter_map(|(key, property_value)| {
-                    let property_schema = schema.properties.get(key)?;
-                    let property = property_value.as_object()?;
-                    let value: NotionPropertyValue = match &property_schema.property_type {
-                        NotionPropertyType::Title => NotionPropertyValue::Text(
-                            property
-                                .get("title")?
-                                .as_array()?
-                                .first()?
-                                .as_object()?
-                                .get("plain_text")?
-                                .as_str()?
-                                .to_string(),
-                        ),
-                        NotionPropertyType::Number => NotionPropertyValue::Number(
-                            property
-                                .get("number")?
-                                .as_object()?
-                                .get("number")?
-                                .as_f64()?,
-                        ),
-                        NotionPropertyType::Select => NotionPropertyValue::Text(
-                            property
-                                .get("select")?
-                                .as_object()?
-                                .get("select")?
-                                .as_object()?
-                                .get("name")?
-                                .as_str()?
-                                .to_string(),
-                        ),
-                        NotionPropertyType::Other => NotionPropertyValue::Json(
-                            property.get(&property_schema.property_raw_type)?.clone(),
-                        ),
-                    };
-                    Some((key.to_string(), value))
-                })
-                .collect::<HashMap<String, NotionPropertyValue>>();
-
-            Some(NotionEntry { id, properties })
-        })
+        .filter_map(|&result| entry_builder.from(result))
         .collect::<Vec<_>>();
 
     Ok(entries)
 }
 
 fn validate_object_type(query_resp: &Value) -> Result<(), InvalidListObjectError> {
-    let object_field = query_resp
-        .as_object()
-        .and_then(|o| o.get("object"))
+    let json_keys = vec![JsonKey::String("object")];
+    let object_field = dig_json(query_resp, &json_keys)
         .and_then(|o| o.as_str())
         .ok_or(InvalidListObjectError(
             r#"It must have `"object": "list"`."#.to_string(),
