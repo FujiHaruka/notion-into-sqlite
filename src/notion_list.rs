@@ -1,5 +1,6 @@
 use crate::json_util::{dig_json, JsonKey};
 use crate::notion_database_schema::{NotionDatabaseSchema, NotionPropertyType};
+use rusqlite::ToSql;
 use serde_json::{Map, Value};
 use std::collections::HashMap;
 use std::error::Error;
@@ -11,11 +12,22 @@ pub enum NotionPropertyValue {
     Number(f64),
     Json(Value),
 }
+impl ToSql for NotionPropertyValue {
+    fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
+        match self {
+            NotionPropertyValue::Text(value) => value.to_sql(),
+            NotionPropertyValue::Number(value) => value.to_sql(),
+            NotionPropertyValue::Json(value) => Ok(rusqlite::types::ToSqlOutput::from(
+                serde_json::to_string(value).unwrap(),
+            )),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct NotionEntry {
-    id: String,
-    properties: HashMap<String, NotionPropertyValue>,
+    pub id: String,
+    pub properties: HashMap<String, NotionPropertyValue>,
 }
 
 #[derive(Debug)]

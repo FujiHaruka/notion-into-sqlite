@@ -8,6 +8,7 @@ mod sqlite;
 extern crate log;
 
 use crate::notion_client::NotionClient;
+use crate::sqlite::Sqlite;
 use std::env;
 
 fn main() {
@@ -20,5 +21,10 @@ fn main() {
     let schema = client.get_database(&database_id).unwrap();
     let list = client.get_all_entries(&database_id, &schema).unwrap();
 
-    println!("spam!spam!spam!spam!{:?}", list);
+    let sqlite = Sqlite::new("notion.db", &schema).unwrap();
+    sqlite.create_table().unwrap();
+
+    for item in list {
+        sqlite.insert(&item).unwrap();
+    }
 }
