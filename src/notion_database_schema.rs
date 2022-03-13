@@ -1,4 +1,5 @@
 use serde_json::Value;
+use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
 
@@ -19,7 +20,7 @@ pub struct NotionProperty {
 
 #[derive(Debug)]
 pub struct NotionDatabaseSchema {
-    pub properties: Vec<NotionProperty>,
+    pub properties: HashMap<String, NotionProperty>,
 }
 
 #[derive(Debug, Clone)]
@@ -59,13 +60,16 @@ pub fn parse_database_schema(
                 "number" => NotionPropertyType::Number,
                 _ => NotionPropertyType::Other,
             };
-            Some(NotionProperty {
-                name: name.to_string(),
-                property_raw_type: property_raw_type.to_string(),
-                property_type,
-            })
+            Some((
+                name.to_string(),
+                NotionProperty {
+                    name: name.to_string(),
+                    property_raw_type: property_raw_type.to_string(),
+                    property_type,
+                },
+            ))
         })
-        .collect::<Vec<NotionProperty>>();
+        .collect::<HashMap<String, NotionProperty>>();
 
     Ok(NotionDatabaseSchema { properties })
 }

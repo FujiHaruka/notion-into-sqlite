@@ -1,10 +1,10 @@
-use crate::notion_database_schema::NotionDatabaseSchema;
+use crate::notion_database_schema::{NotionDatabaseSchema, NotionPropertyType};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
 
-pub enum NotionEntryValue {
+pub enum NotionPropertyValue {
     Text(String),
     Number(f64),
     Json(Value),
@@ -12,7 +12,7 @@ pub enum NotionEntryValue {
 
 pub struct NotionEntry {
     id: String,
-    properties: HashMap<String, NotionEntryValue>,
+    properties: HashMap<String, NotionPropertyValue>,
 }
 
 #[derive(Debug, Clone)]
@@ -25,7 +25,7 @@ impl fmt::Display for InvalidListObjectError {
 }
 impl Error for InvalidListObjectError {}
 
-pub fn parse_notion_entries(
+pub fn parse_notion_list(
     schema: &NotionDatabaseSchema,
     query_resp_json: &str,
 ) -> Result<Vec<NotionEntry>, Box<dyn Error>> {
@@ -44,11 +44,59 @@ pub fn parse_notion_entries(
                 .collect::<Vec<_>>()
         })
         .ok_or(InvalidListObjectError(
-            r#"It must have "results" as array of objects."#.to_string(),
+            r#"It must have "results" as arrray of objects."#.to_string(),
         ))?;
-    let entries = results;
+    let entries: Vec<NotionEntry> = results
+        .iter()
+        .filter_map(|result| {
+            let id = result.get("id")?.as_str()?.to_string();
+            let properties_object = result.get("properties")?.as_object()?;
+            let properties = properties_object
+                .iter()
+                .filter_map(|(key, property_value)| {
+                    let property_schema = schema.properties.get(key)?;
+                    let property = property_value.as_object()?;
+                    let value: NotionPropertyValue = match &property_schema.property_type {
+                        NotionPropertyType::Title => NotionPropertyValue::Text(
+                            property
+                                .get("title")?
+                                .as_array()?
+                                .first()?
+                                .as_object()?
+                                .get("plain_text")?
+                                .as_str()?
+                                .to_string(),
+                        ),
+                        NotionPropertyType::Number => NotionPropertyValue::Number(
+                            property
+                                .get("number")?
+                                .as_object()?
+                                .get("number")?
+                                .as_f64()?,
+                        ),
+                        NotionPropertyType::Select => NotionPropertyValue::Text(
+                            property
+                                .get("select")?
+                                .as_object()?
+                                .get("select")?
+                                .as_object()?
+                                .get("name")?
+                                .as_str()?
+                                .to_string(),
+                        ),
+                        NotionPropertyType::Other => NotionPropertyValue::Json(
+                            property.get(&property_schema.property_raw_type)?.clone(),
+                        ),
+                    };
+                    Some((key.to_string(), value))
+                })
+                .collect::<HashMap<String, NotionPropertyValue>>();
 
-    Ok(vec![])
+            Some(NotionEntry { id, properties })
+        })
+        .collect::<Vec<_>>();
+
+    Ok(entries)
 }
 
 fn validate_object_type(query_resp: &Value) -> Result<(), InvalidListObjectError> {
