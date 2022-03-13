@@ -81,10 +81,12 @@ impl Error for InvalidListObjectError {}
 pub fn parse_notion_list(
     schema: &NotionDatabaseSchema,
     query_resp_json: &str,
-) -> Result<Vec<NotionEntry>, Box<dyn Error>> {
+) -> Result<(Vec<NotionEntry>, Option<String>), Box<dyn Error>> {
     let query_resp = serde_json::from_str::<Value>(query_resp_json)?;
 
     validate_object_type(&query_resp)?;
+
+    let next_cursor = get_next_cursor(&query_resp);
 
     let results_json_keys = vec![JsonKey::String("results")];
     let results = dig_json(&query_resp, &results_json_keys)
@@ -105,7 +107,7 @@ pub fn parse_notion_list(
         .filter_map(|&result| entry_builder.from(result))
         .collect::<Vec<_>>();
 
-    Ok(entries)
+    Ok((entries, next_cursor))
 }
 
 fn validate_object_type(query_resp: &Value) -> Result<(), InvalidListObjectError> {
@@ -124,6 +126,11 @@ fn validate_object_type(query_resp: &Value) -> Result<(), InvalidListObjectError
             object_field
         )))
     }
+}
+
+fn get_next_cursor(query_resp: &Value) -> Option<String> {
+    let json_keys: Vec<JsonKey> = vec!["next_cursor".into()];
+    Some(dig_json(query_resp, &json_keys)?.as_str()?.to_string())
 }
 
 #[cfg(test)]

@@ -3,6 +3,7 @@ use std::error::Error;
 use std::fmt;
 
 use crate::notion_database_schema::{parse_database_schema, NotionDatabaseSchema};
+use crate::notion_list::{parse_notion_list, NotionEntry};
 
 pub struct NotionClient {
     pub api_key: String,
@@ -22,11 +23,16 @@ impl NotionClient {
         parse_database_schema(&resp)
     }
 
-    pub fn get_all_columns(&self, database_id: &str) -> Result<Value, Box<dyn Error>> {
+    pub fn get_all_entries(
+        &self,
+        database_id: &str,
+        schema: &NotionDatabaseSchema,
+    ) -> Result<Vec<NotionEntry>, Box<dyn Error>> {
         let url = format!("https://api.notion.com/v1/databases/{0}/query", database_id);
         let client = reqwest::blocking::Client::new();
 
-        let mut next_cursor: Option<&str> = None;
+        let mut next_cursor: Option<String> = None;
+        let mut notion_entries: Vec<NotionEntry> = vec![];
         loop {
             let next_cursor_json =
                 next_cursor.map_or("null".to_string(), |cursor| format!(r#""{0}""#, cursor));
@@ -45,13 +51,16 @@ impl NotionClient {
                 .header("Notion-Version", "2022-02-22")
                 .body(query)
                 .send()?
-                .json::<Value>()?;
+                .text()?;
+            let (mut list, _next_cursor) = parse_notion_list(schema, &resp)?;
+            notion_entries.append(&mut list);
+            next_cursor = _next_cursor;
 
             if next_cursor.is_none() {
                 break;
             }
         }
 
-        Ok(Value::Null)
+        Ok(notion_entries)
     }
 }

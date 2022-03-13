@@ -11,6 +11,7 @@ fn main() {
 
     let client = notion_client::NotionClient { api_key };
     let schema = client.get_database(&database_id).unwrap();
+    let list = client.get_all_entries(&database_id, &schema).unwrap();
 
-    println!("{:?}", schema);
+    println!("{:?}", list);
 }
