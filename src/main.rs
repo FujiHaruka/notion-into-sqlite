@@ -2,6 +2,7 @@ mod json_util;
 mod notion_client;
 mod notion_database_schema;
 mod notion_list;
+mod sqlite;
 
 #[macro_use]
 extern crate log;
