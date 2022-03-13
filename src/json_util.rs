@@ -4,6 +4,16 @@ pub enum JsonKey<'a> {
     String(&'a str),
     Index(usize),
 }
+impl<'a> From<&'a str> for JsonKey<'a> {
+    fn from(s: &'a str) -> Self {
+        JsonKey::String(s)
+    }
+}
+impl From<usize> for JsonKey<'_> {
+    fn from(i: usize) -> Self {
+        JsonKey::Index(i)
+    }
+}
 
 pub fn dig_json<'a>(source: &'a Value, keys: &Vec<JsonKey>) -> Option<&'a Value> {
     let mut value = source;
@@ -22,7 +32,7 @@ mod tests {
     #[test]
     fn test_dig_json() {
         let data = serde_json::from_str::<Value>("{}").unwrap();
-        let keys = vec![JsonKey::String("foo"), JsonKey::Index(1)];
+        let keys: Vec<JsonKey> = vec!["foo".into(), "foo".into(), 1.into()];
         assert!(dig_json(&data, &keys).is_none());
 
         let data = serde_json::from_str::<Value>(
@@ -37,12 +47,7 @@ mod tests {
         }"#,
         )
         .unwrap();
-        let keys = vec![
-            JsonKey::String("foo"),
-            JsonKey::String("bar"),
-            JsonKey::Index(0),
-            JsonKey::String("id"),
-        ];
+        let keys: Vec<JsonKey> = vec!["foo".into(), "bar".into(), 0.into(), "id".into()];
         assert_eq!(dig_json(&data, &keys).unwrap(), "xxx");
     }
 }
