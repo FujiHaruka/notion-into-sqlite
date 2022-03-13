@@ -10,7 +10,10 @@ pub enum NotionEntryValue {
     Json(Value),
 }
 
-type NotionEntry = HashMap<String, NotionEntryValue>;
+pub struct NotionEntry {
+    id: String,
+    properties: HashMap<String, NotionEntryValue>,
+}
 
 #[derive(Debug, Clone)]
 struct InvalidListObjectError(String);
@@ -26,9 +29,24 @@ pub fn parse_notion_entries(
     schema: &NotionDatabaseSchema,
     query_resp_json: &str,
 ) -> Result<Vec<NotionEntry>, Box<dyn Error>> {
-    let query_resp = serde_json::from_str(query_resp_json)?;
+    let query_resp = serde_json::from_str::<Value>(query_resp_json)?;
 
     validate_object_type(&query_resp)?;
+
+    let results = query_resp
+        .as_object()
+        .and_then(|resp| resp.get("results"))
+        .and_then(|results| results.as_array())
+        .map(|results| {
+            results
+                .iter()
+                .filter_map(|r| r.as_object())
+                .collect::<Vec<_>>()
+        })
+        .ok_or(InvalidListObjectError(
+            r#"It must have "results" as array of objects."#.to_string(),
+        ))?;
+    let entries = results;
 
     Ok(vec![])
 }
