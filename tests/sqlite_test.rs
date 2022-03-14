@@ -1,4 +1,4 @@
-mod fixtures;
+mod common;
 
 extern crate notion_into_sqlite;
 
@@ -6,6 +6,7 @@ use serial_test::serial;
 use std::collections::HashMap;
 use std::fs;
 
+use common::fixtures;
 use notion_into_sqlite::notion_database::parse_database_schema;
 use notion_into_sqlite::notion_list::{NotionEntry, NotionPropertyValue};
 use notion_into_sqlite::sqlite::Sqlite;

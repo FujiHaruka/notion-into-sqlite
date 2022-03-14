@@ -1,7 +1,8 @@
-mod fixtures;
+mod common;
 
 extern crate notion_into_sqlite;
 
+use common::fixtures;
 use notion_into_sqlite::notion_database::{parse_database_schema, NotionPropertyType};
 use std::error::Error;
 
