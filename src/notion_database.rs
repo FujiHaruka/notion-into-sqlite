@@ -44,9 +44,9 @@ pub fn parse_database_schema(
         .as_object()
         .and_then(|resp| resp.get("properties"))
         .and_then(|prop| prop.as_object())
-        .ok_or(InvalidDatabaseObjectError(
-            r#"It must have "properties" object."#.to_string(),
-        ))?;
+        .ok_or_else(|| {
+            InvalidDatabaseObjectError(r#"It must have "properties" object."#.to_string())
+        })?;
 
     let properties = raw_properties
         .keys()
@@ -79,9 +79,9 @@ fn validate_object_type(database_resp: &Value) -> Result<(), InvalidDatabaseObje
         .as_object()
         .and_then(|o| o.get("object"))
         .and_then(|o| o.as_str())
-        .ok_or(InvalidDatabaseObjectError(
-            r#"It must have `"object": "database"`."#.to_string(),
-        ))?;
+        .ok_or_else(|| {
+            InvalidDatabaseObjectError(r#"It must have `"object": "database"`."#.to_string())
+        })?;
 
     if object_field == "database" {
         Ok(())
@@ -105,7 +105,7 @@ mod tests {
         }
         "#;
         let json = serde_json::from_str(data).unwrap();
-        assert_eq!(validate_object_type(&json).is_ok(), true);
+        assert!(validate_object_type(&json).is_ok());
 
         let data = r#"
         {
@@ -113,12 +113,12 @@ mod tests {
         }
         "#;
         let json = serde_json::from_str(data).unwrap();
-        assert_eq!(validate_object_type(&json).is_err(), true);
+        assert!(validate_object_type(&json).is_err());
 
         let data = r#"
         {}
         "#;
         let json = serde_json::from_str(data).unwrap();
-        assert_eq!(validate_object_type(&json).is_err(), true);
+        assert!(validate_object_type(&json).is_err());
     }
 }

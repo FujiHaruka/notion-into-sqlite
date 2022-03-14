@@ -38,7 +38,7 @@ struct NotionEntryBuilder<'a> {
     select_json_path: Vec<JsonKey<'a>>,
 }
 impl NotionEntryBuilder<'_> {
-    fn new<'a>(schema: &'a NotionDatabaseSchema) -> NotionEntryBuilder<'a> {
+    fn new(schema: &NotionDatabaseSchema) -> NotionEntryBuilder<'_> {
         NotionEntryBuilder {
             schema,
             title_json_path: vec!["title".into(), 0.into(), "plain_text".into()],
@@ -54,21 +54,21 @@ impl NotionEntryBuilder<'_> {
             .iter()
             .filter_map(|(key, property)| {
                 let property_schema = self.schema.properties.get(key)?;
-                let value: NotionPropertyValue = match &property_schema.property_type {
-                    &NotionPropertyType::Title => NotionPropertyValue::Text(
+                let value: NotionPropertyValue = match property_schema.property_type {
+                    NotionPropertyType::Title => NotionPropertyValue::Text(
                         dig_json(property, &self.title_json_path)?
                             .as_str()?
                             .to_string(),
                     ),
-                    &NotionPropertyType::Number => NotionPropertyValue::Number(
+                    NotionPropertyType::Number => NotionPropertyValue::Number(
                         dig_json(property, &self.number_json_path)?.as_f64()?,
                     ),
-                    &NotionPropertyType::Select => NotionPropertyValue::Text(
+                    NotionPropertyType::Select => NotionPropertyValue::Text(
                         dig_json(property, &self.select_json_path)?
                             .as_str()?
                             .to_string(),
                     ),
-                    &NotionPropertyType::Other => NotionPropertyValue::Json(
+                    NotionPropertyType::Other => NotionPropertyValue::Json(
                         property.get(&property_schema.property_raw_type)?.clone(),
                     ),
                 };
@@ -109,9 +109,9 @@ pub fn parse_notion_list(
                 .filter_map(|r| r.as_object())
                 .collect::<Vec<_>>()
         })
-        .ok_or(InvalidListObjectError(
-            r#"It must have "results" as arrray of objects."#.to_string(),
-        ))?;
+        .ok_or_else(|| {
+            InvalidListObjectError(r#"It must have "results" as arrray of objects."#.to_string())
+        })?;
 
     let entry_builder = NotionEntryBuilder::new(schema);
     let entries: Vec<NotionEntry> = results
@@ -126,9 +126,7 @@ fn validate_object_type(query_resp: &Value) -> Result<(), InvalidListObjectError
     let json_keys = vec![JsonKey::String("object")];
     let object_field = dig_json(query_resp, &json_keys)
         .and_then(|o| o.as_str())
-        .ok_or(InvalidListObjectError(
-            r#"It must have `"object": "list"`."#.to_string(),
-        ))?;
+        .ok_or_else(|| InvalidListObjectError(r#"It must have `"object": "list"`."#.to_string()))?;
 
     if object_field == "list" {
         Ok(())
@@ -157,7 +155,7 @@ mod tests {
         }
         "#;
         let json = serde_json::from_str(data).unwrap();
-        assert_eq!(validate_object_type(&json).is_ok(), true);
+        assert!(validate_object_type(&json).is_ok());
 
         let data = r#"
         {
@@ -165,12 +163,12 @@ mod tests {
         }
         "#;
         let json = serde_json::from_str(data).unwrap();
-        assert_eq!(validate_object_type(&json).is_err(), true);
+        assert!(validate_object_type(&json).is_err());
 
         let data = r#"
         {}
         "#;
         let json = serde_json::from_str(data).unwrap();
-        assert_eq!(validate_object_type(&json).is_err(), true);
+        assert!(validate_object_type(&json).is_err());
     }
 }

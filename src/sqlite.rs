@@ -69,11 +69,10 @@ impl Sqlite<'_> {
             })
             .collect::<Vec<_>>()
             .join(", ")
-            
     }
 
     /// Create sql like "INSERT INTO {} (id, title) values (?1, ?2)"
-    fn create_insert_sql_for(&self, columns: &Vec<&str>) -> String {
+    fn create_insert_sql_for(&self, columns: &[&str]) -> String {
         let columns_formatted = columns
             .iter()
             .map(|&column| {
