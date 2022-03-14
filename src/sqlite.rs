@@ -69,7 +69,7 @@ impl Sqlite<'_> {
             })
             .collect::<Vec<_>>()
             .join(", ")
-            .to_string()
+            
     }
 
     /// Create sql like "INSERT INTO {} (id, title) values (?1, ?2)"

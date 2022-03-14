@@ -21,7 +21,7 @@ pub fn dig_json<'a>(source: &'a Value, keys: &Vec<JsonKey>) -> Option<&'a Value>
     for key in keys {
         value = match key {
             &JsonKey::String(k) => value.as_object()?.get(k)?,
-            &JsonKey::Index(index) => value.as_array()?.get(index.clone())?,
+            &JsonKey::Index(index) => value.as_array()?.get(index)?,
         }
     }
     Some(value)
