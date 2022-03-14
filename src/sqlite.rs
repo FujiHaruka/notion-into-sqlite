@@ -1,5 +1,5 @@
 use crate::{
-    notion_database_schema::{NotionDatabaseSchema, NotionPropertyType},
+    notion_database::{NotionDatabaseSchema, NotionPropertyType},
     notion_list::{NotionEntry, NotionPropertyValue},
 };
 use rusqlite::{params_from_iter, Connection, Result};
@@ -103,7 +103,7 @@ mod tests {
     use std::collections::HashMap;
     use std::fs;
 
-    use crate::notion_database_schema::NotionProperty;
+    use crate::notion_database::NotionProperty;
 
     use super::*;
 

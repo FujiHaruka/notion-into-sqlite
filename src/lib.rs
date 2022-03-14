@@ -1,8 +1,8 @@
-mod json_util;
-mod notion_client;
-mod notion_database_schema;
-mod notion_list;
-mod sqlite;
+pub mod json_util;
+pub mod notion_client;
+pub mod notion_database;
+pub mod notion_list;
+pub mod sqlite;
 
 #[macro_use]
 extern crate log;

@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::notion_database_schema::{parse_database_schema, NotionDatabaseSchema};
+use crate::notion_database::{parse_database_schema, NotionDatabaseSchema};
 use crate::notion_list::{parse_notion_list, NotionEntry};
 
 pub struct NotionClient {
