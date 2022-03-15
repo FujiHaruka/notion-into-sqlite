@@ -14,14 +14,15 @@ use std::error::Error;
 
 static DATABASE_PATH: &str = "tmp/test.db";
 
-fn cleanup(database_path: &str) {
+fn setup(database_path: &str) {
     fs::remove_file(database_path).ok();
+    fs::create_dir("tmp").ok();
 }
 
 #[test]
 #[serial]
 fn it_creates_table() -> Result<(), Box<dyn Error>> {
-    cleanup(DATABASE_PATH);
+    setup(DATABASE_PATH);
 
     let schema = parse_database_schema(fixtures::NOTION_DATABASE_JSON)?;
     let sqlite = Sqlite::new(DATABASE_PATH, &schema)?;
@@ -43,7 +44,7 @@ fn it_creates_table() -> Result<(), Box<dyn Error>> {
 #[test]
 #[serial]
 fn it_creates_table_when_column_name_includes_double_quote() -> Result<(), Box<dyn Error>> {
-    cleanup(DATABASE_PATH);
+    setup(DATABASE_PATH);
 
     let schema = parse_database_schema(fixtures::NOTION_DATABASE_IRREGULAR_JSON)?;
     let sqlite = Sqlite::new(DATABASE_PATH, &schema)?;
@@ -63,7 +64,7 @@ fn it_creates_table_when_column_name_includes_double_quote() -> Result<(), Box<d
 #[test]
 #[serial]
 fn it_inserts_notion_entry() -> Result<(), Box<dyn Error>> {
-    cleanup(DATABASE_PATH);
+    setup(DATABASE_PATH);
 
     let schema = parse_database_schema(fixtures::NOTION_DATABASE_JSON)?;
     let sqlite = Sqlite::new(DATABASE_PATH, &schema)?;
