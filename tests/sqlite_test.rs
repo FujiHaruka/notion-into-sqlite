@@ -42,6 +42,26 @@ fn it_creates_table() -> Result<(), Box<dyn Error>> {
 
 #[test]
 #[serial]
+fn it_creates_table_when_column_name_includes_double_quote() -> Result<(), Box<dyn Error>> {
+    cleanup(DATABASE_PATH);
+
+    let schema = parse_database_schema(fixtures::NOTION_DATABASE_IRREGULAR_JSON)?;
+    let sqlite = Sqlite::new(DATABASE_PATH, &schema)?;
+    sqlite.create_table()?;
+
+    let (table_name, sql): (String, String) =
+        sqlite
+            .conn
+            .query_row("SELECT name, sql FROM sqlite_master", [], |row| {
+                Ok((row.get(0)?, row.get(1)?))
+            })?;
+    assert_eq!(table_name, "notion");
+    assert!(sql.contains(r#""あ&"";#' f　_" REAL"#));
+    Ok(())
+}
+
+#[test]
+#[serial]
 fn it_inserts_notion_entry() -> Result<(), Box<dyn Error>> {
     cleanup(DATABASE_PATH);
 

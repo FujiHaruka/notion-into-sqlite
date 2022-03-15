@@ -73,6 +73,55 @@ pub static NOTION_DATABASE_JSON: &str = r#"
 "#;
 
 #[allow(dead_code)]
+pub static NOTION_DATABASE_IRREGULAR_JSON: &str = r#"
+{
+  "object": "database",
+  "id": "f2bf4cd7-b8d1-44fc-856e-8fe60c128b58",
+  "cover": null,
+  "icon": null,
+  "created_time": "2022-03-12T00:15:00.000Z",
+  "created_by": {
+      "object": "user",
+      "id": "9d069f8b-6223-4853-b7eb-8fe3dfe7d389"
+  },
+  "last_edited_by": {
+      "object": "user",
+      "id": "9d069f8b-6223-4853-b7eb-8fe3dfe7d389"
+  },
+  "last_edited_time": "2022-03-12T00:20:00.000Z",
+  "title": [
+      {
+          "type": "text",
+          "text": {
+              "content": "Animals",
+              "link": null
+          },
+          "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+          },
+          "plain_text": "Animals",
+          "href": null
+      }
+  ],
+  "properties": {
+      "あ&\";#' f　_": {
+          "id": "GPCK",
+          "name": "あ&\";#' f　_",
+          "type": "number",
+          "number": {
+              "format": "number"
+          }
+      }
+  }
+}
+"#;
+
+#[allow(dead_code)]
 pub static NOTION_LIST_JSON: &str = r#"
 {
     "object": "list",
