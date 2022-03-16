@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     notion_database::{NotionDatabaseSchema, NotionPropertyType},
-    notion_pages::{NotionEntry, NotionPropertyValue},
+    notion_pages::{NotionPage, NotionPropertyValue},
 };
 use rusqlite::{params_from_iter, Connection, Result};
 
@@ -58,19 +58,19 @@ impl Sqlite<'_> {
         Ok(())
     }
 
-    pub fn insert(&self, entry: &NotionEntry) -> Result<()> {
+    pub fn insert(&self, page: &NotionPage) -> Result<()> {
         let mut property_names = vec!["id"];
-        for name in entry.properties.keys() {
+        for name in page.properties.keys() {
             property_names.push(name);
         }
         let sql = self.create_insert_sql_for(&property_names);
         debug!("{}", sql);
-        let entry_id = NotionPropertyValue::Text(entry.id.clone());
+        let page_id = NotionPropertyValue::Text(page.id.clone());
         let sql_params = params_from_iter(property_names.iter().map(|&column| {
             if column == "id" {
-                &entry_id
+                &page_id
             } else {
-                entry.properties.get(column).unwrap()
+                page.properties.get(column).unwrap()
             }
         }));
         debug!("Parameters: {:?}", sql_params);

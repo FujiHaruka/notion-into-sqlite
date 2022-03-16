@@ -8,7 +8,7 @@ use std::fs;
 
 use common::fixtures;
 use notion_into_sqlite::notion_database::parse_database_schema;
-use notion_into_sqlite::notion_pages::{NotionEntry, NotionPropertyValue};
+use notion_into_sqlite::notion_pages::{NotionPage, NotionPropertyValue};
 use notion_into_sqlite::sqlite::Sqlite;
 use std::error::Error;
 
@@ -70,7 +70,7 @@ fn it_inserts_notion_entry() -> Result<(), Box<dyn Error>> {
     let sqlite = Sqlite::new(DATABASE_PATH, &schema)?;
     sqlite.create_table()?;
 
-    let entry = NotionEntry {
+    let page = NotionPage {
         id: "xxxx".to_string(),
         properties: HashMap::from([
             (
@@ -80,7 +80,7 @@ fn it_inserts_notion_entry() -> Result<(), Box<dyn Error>> {
             ("Age".to_string(), NotionPropertyValue::Number(5.0)),
         ]),
     };
-    sqlite.insert(&entry)?;
+    sqlite.insert(&page)?;
 
     let (id, name, age): (String, String, f64) =
         sqlite

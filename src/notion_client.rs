@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use crate::notion_database::{parse_database_schema, NotionDatabaseSchema};
-use crate::notion_pages::{parse_notion_list, NotionEntry};
+use crate::notion_pages::{parse_notion_page_list, NotionPage};
 
 pub struct NotionClient {
     pub api_key: String,
@@ -29,12 +29,12 @@ impl NotionClient {
         &self,
         database_id: &str,
         schema: &NotionDatabaseSchema,
-    ) -> Result<Vec<NotionEntry>, Box<dyn Error>> {
+    ) -> Result<Vec<NotionPage>, Box<dyn Error>> {
         let url = format!("https://api.notion.com/v1/databases/{0}/query", database_id);
         let client = reqwest::blocking::Client::new();
 
         let mut next_cursor: Option<String> = None;
-        let mut notion_entries: Vec<NotionEntry> = vec![];
+        let mut all_pages: Vec<NotionPage> = vec![];
         loop {
             let next_cursor_json =
                 next_cursor.map_or("null".to_string(), |cursor| format!(r#""{0}""#, cursor));
@@ -53,9 +53,9 @@ impl NotionClient {
                 .text()?;
             info!("Request done.");
 
-            let (mut list, _next_cursor) = parse_notion_list(schema, &resp)?;
-            info!("Items: {:?}", list);
-            notion_entries.append(&mut list);
+            let (mut pages, _next_cursor) = parse_notion_page_list(schema, &resp)?;
+            info!("Pages: {:?}", pages);
+            all_pages.append(&mut pages);
             next_cursor = _next_cursor;
 
             if next_cursor.is_none() {
@@ -66,6 +66,6 @@ impl NotionClient {
             }
         }
 
-        Ok(notion_entries)
+        Ok(all_pages)
     }
 }

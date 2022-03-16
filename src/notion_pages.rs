@@ -25,21 +25,21 @@ impl ToSql for NotionPropertyValue {
 }
 
 #[derive(Debug)]
-pub struct NotionEntry {
+pub struct NotionPage {
     pub id: String,
     pub properties: HashMap<String, NotionPropertyValue>,
 }
 
 #[derive(Debug)]
-struct NotionEntryBuilder<'a> {
+struct NotionPageBuilder<'a> {
     schema: &'a NotionDatabaseSchema,
     title_json_path: Vec<JsonKey<'a>>,
     number_json_path: Vec<JsonKey<'a>>,
     select_json_path: Vec<JsonKey<'a>>,
 }
-impl NotionEntryBuilder<'_> {
-    fn new(schema: &NotionDatabaseSchema) -> NotionEntryBuilder<'_> {
-        NotionEntryBuilder {
+impl NotionPageBuilder<'_> {
+    fn new(schema: &NotionDatabaseSchema) -> NotionPageBuilder<'_> {
+        NotionPageBuilder {
             schema,
             title_json_path: vec!["title".into(), 0.into(), "plain_text".into()],
             number_json_path: vec!["number".into()],
@@ -47,7 +47,7 @@ impl NotionEntryBuilder<'_> {
         }
     }
 
-    fn from(&self, json_entry: &Map<String, Value>) -> Option<NotionEntry> {
+    fn from(&self, json_entry: &Map<String, Value>) -> Option<NotionPage> {
         let id = json_entry.get("id")?.as_str()?.to_string();
         let properties_object = json_entry.get("properties")?.as_object()?;
         let properties = properties_object
@@ -76,7 +76,7 @@ impl NotionEntryBuilder<'_> {
             })
             .collect::<HashMap<String, NotionPropertyValue>>();
 
-        Some(NotionEntry { id, properties })
+        Some(NotionPage { id, properties })
     }
 }
 
@@ -90,10 +90,10 @@ impl fmt::Display for InvalidListObjectError {
 }
 impl Error for InvalidListObjectError {}
 
-pub fn parse_notion_list(
+pub fn parse_notion_page_list(
     schema: &NotionDatabaseSchema,
     query_resp_json: &str,
-) -> Result<(Vec<NotionEntry>, Option<String>), Box<dyn Error>> {
+) -> Result<(Vec<NotionPage>, Option<String>), Box<dyn Error>> {
     let query_resp = serde_json::from_str::<Value>(query_resp_json)?;
 
     validate_object_type(&query_resp)?;
@@ -113,13 +113,13 @@ pub fn parse_notion_list(
             InvalidListObjectError(r#"It must have "results" as arrray of objects."#.to_string())
         })?;
 
-    let entry_builder = NotionEntryBuilder::new(schema);
-    let entries: Vec<NotionEntry> = results
+    let page_builder = NotionPageBuilder::new(schema);
+    let pages: Vec<NotionPage> = results
         .iter()
-        .filter_map(|&result| entry_builder.from(result))
+        .filter_map(|&result| page_builder.from(result))
         .collect::<Vec<_>>();
 
-    Ok((entries, next_cursor))
+    Ok((pages, next_cursor))
 }
 
 fn validate_object_type(query_resp: &Value) -> Result<(), InvalidListObjectError> {
