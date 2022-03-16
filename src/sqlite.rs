@@ -6,6 +6,10 @@ use crate::{
 };
 use rusqlite::{params_from_iter, Connection, Result};
 
+pub static PAGE_METADATA_TABLE: &str = "page_metadata";
+pub static PAGE_PROPERTIES_TABLE: &str = "pages";
+pub static PAGE_ID_COLUMN: &str = "page_id";
+
 /// Resolve SQLite's column name from Notion's property name
 struct ColumnNames {
     hash: HashMap<String, String>,
@@ -28,29 +32,26 @@ impl ColumnNames {
 
 pub struct Sqlite<'a> {
     pub conn: Connection,
-    pub table_name: String,
     pub schema: &'a NotionDatabaseSchema,
     column_names: ColumnNames,
 }
 impl Sqlite<'_> {
     pub fn new<'a>(path: &str, schema: &'a NotionDatabaseSchema) -> Result<Sqlite<'a>> {
         let conn = Connection::open(path)?;
-        // for now, fixed table name
-        let table_name = "notion".to_string();
         let column_names = ColumnNames::new(schema);
         Ok(Sqlite {
             conn,
-            table_name,
             schema,
             column_names,
         })
     }
 
-    pub fn create_table(&self) -> Result<()> {
+    pub fn create_tables(&self) -> Result<()> {
         let table_definition = self.table_definitin_from();
         let sql = format!(
-            "CREATE TABLE {table_name} (id TEXT PRIMARY KEY, {definition})",
-            table_name = self.table_name,
+            "CREATE TABLE {table_name} ({id_column} TEXT PRIMARY KEY, {definition})",
+            table_name = PAGE_PROPERTIES_TABLE,
+            id_column = PAGE_ID_COLUMN,
             definition = table_definition,
         );
         debug!("{}", sql);
@@ -59,7 +60,7 @@ impl Sqlite<'_> {
     }
 
     pub fn insert(&self, page: &NotionPage) -> Result<()> {
-        let mut property_names = vec!["id"];
+        let mut property_names = vec![PAGE_ID_COLUMN];
         for name in page.properties.keys() {
             property_names.push(name);
         }
@@ -67,7 +68,7 @@ impl Sqlite<'_> {
         debug!("{}", sql);
         let page_id = NotionPropertyValue::Text(page.id.clone());
         let sql_params = params_from_iter(property_names.iter().map(|&column| {
-            if column == "id" {
+            if column == PAGE_ID_COLUMN {
                 &page_id
             } else {
                 page.properties.get(column).unwrap()
@@ -81,7 +82,7 @@ impl Sqlite<'_> {
 
     /// Get table definistion string from the schema object.
     /// It's a part of SQL query specified in {{}}:
-    /// CREATE TABLE notion (id TEXT PRIMARY KEY, {{"Animal" TEXT, "Age" REAL, "Name" TEXT}})
+    /// CREATE TABLE notion (page_id TEXT PRIMARY KEY, {{"Animal" TEXT, "Age" REAL, "Name" TEXT}})
     fn table_definitin_from(&self) -> String {
         self.schema
             .properties
@@ -105,7 +106,7 @@ impl Sqlite<'_> {
         let columns_formatted = properties
             .iter()
             .map(|&property_name| {
-                if property_name == "id" {
+                if property_name == PAGE_ID_COLUMN {
                     property_name.to_string()
                 } else {
                     let column = self.column_names.resolve(property_name);
@@ -119,7 +120,7 @@ impl Sqlite<'_> {
 
         format!(
             "INSERT INTO {table_name} ({columns}) VALUES ({values})",
-            table_name = &self.table_name,
+            table_name = &PAGE_PROPERTIES_TABLE,
             columns = columns_formatted.join(", "),
             values = placeholders.join(", ")
         )

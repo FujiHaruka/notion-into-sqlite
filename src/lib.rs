@@ -22,7 +22,7 @@ pub fn main() {
     let pages = client.get_all_pages(&database_id, &schema).unwrap();
 
     let sqlite = Sqlite::new("notion.db", &schema).unwrap();
-    sqlite.create_table().unwrap();
+    sqlite.create_tables().unwrap();
 
     for page in pages {
         sqlite.insert(&page).unwrap();

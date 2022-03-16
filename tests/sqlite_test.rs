@@ -9,7 +9,7 @@ use std::fs;
 use common::fixtures;
 use notion_into_sqlite::notion_database::parse_database_schema;
 use notion_into_sqlite::notion_pages::{NotionPage, NotionPropertyValue};
-use notion_into_sqlite::sqlite::Sqlite;
+use notion_into_sqlite::sqlite::{Sqlite, PAGE_PROPERTIES_TABLE};
 use std::error::Error;
 
 static DATABASE_PATH: &str = "tmp/test.db";
@@ -26,7 +26,7 @@ fn it_creates_table() -> Result<(), Box<dyn Error>> {
 
     let schema = parse_database_schema(fixtures::NOTION_DATABASE_JSON)?;
     let sqlite = Sqlite::new(DATABASE_PATH, &schema)?;
-    sqlite.create_table()?;
+    sqlite.create_tables()?;
 
     let (table_name, sql): (String, String) =
         sqlite
@@ -34,7 +34,7 @@ fn it_creates_table() -> Result<(), Box<dyn Error>> {
             .query_row("SELECT name, sql FROM sqlite_master", [], |row| {
                 Ok((row.get(0)?, row.get(1)?))
             })?;
-    assert_eq!(table_name, "notion");
+    assert_eq!(table_name, PAGE_PROPERTIES_TABLE);
     assert!(sql.contains(r#""Name" TEXT"#));
     assert!(sql.contains(r#""Animal" TEXT"#));
     assert!(sql.contains(r#""Age" REAL"#));
@@ -48,7 +48,7 @@ fn it_creates_table_when_column_name_includes_double_quote() -> Result<(), Box<d
 
     let schema = parse_database_schema(fixtures::NOTION_DATABASE_IRREGULAR_JSON)?;
     let sqlite = Sqlite::new(DATABASE_PATH, &schema)?;
-    sqlite.create_table()?;
+    sqlite.create_tables()?;
 
     let (table_name, sql): (String, String) =
         sqlite
@@ -56,7 +56,7 @@ fn it_creates_table_when_column_name_includes_double_quote() -> Result<(), Box<d
             .query_row("SELECT name, sql FROM sqlite_master", [], |row| {
                 Ok((row.get(0)?, row.get(1)?))
             })?;
-    assert_eq!(table_name, "notion");
+    assert_eq!(table_name, PAGE_PROPERTIES_TABLE);
     assert!(sql.contains(r#""あ&"";#' f　_" REAL"#));
     Ok(())
 }
@@ -68,7 +68,7 @@ fn it_inserts_notion_entry() -> Result<(), Box<dyn Error>> {
 
     let schema = parse_database_schema(fixtures::NOTION_DATABASE_JSON)?;
     let sqlite = Sqlite::new(DATABASE_PATH, &schema)?;
-    sqlite.create_table()?;
+    sqlite.create_tables()?;
 
     let page = NotionPage {
         id: "xxxx".to_string(),
@@ -82,13 +82,16 @@ fn it_inserts_notion_entry() -> Result<(), Box<dyn Error>> {
     };
     sqlite.insert(&page)?;
 
-    let (id, name, age): (String, String, f64) =
-        sqlite
-            .conn
-            .query_row(r#"SELECT id,"Name","Age" from notion"#, [], |row| {
-                Ok((row.get(0)?, row.get(1)?, row.get(2)?))
-            })?;
-    assert_eq!(id, "xxxx");
+    let (page_id, name, age): (String, String, f64) = sqlite.conn.query_row(
+        format!(
+            r#"SELECT page_id,"Name","Age" from {table_name}"#,
+            table_name = PAGE_PROPERTIES_TABLE
+        )
+        .as_str(),
+        [],
+        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+    )?;
+    assert_eq!(page_id, "xxxx");
     assert_eq!(name, "Meu");
     assert_eq!(age, 5.0);
     Ok(())
