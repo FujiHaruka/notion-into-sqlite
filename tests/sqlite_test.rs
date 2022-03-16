@@ -21,7 +21,7 @@ fn setup(database_path: &str) {
 
 #[test]
 #[serial]
-fn it_creates_table() -> Result<(), Box<dyn Error>> {
+fn it_creates_tables() -> Result<(), Box<dyn Error>> {
     setup(DATABASE_PATH);
 
     let schema = parse_database_schema(fixtures::NOTION_DATABASE_JSON)?;
@@ -79,6 +79,7 @@ fn it_inserts_notion_entry() -> Result<(), Box<dyn Error>> {
             ),
             ("Age".to_string(), NotionPropertyValue::Number(5.0)),
         ]),
+        url: "https://www.notion.so/xxxx".to_string(),
     };
     sqlite.insert(&page)?;
 

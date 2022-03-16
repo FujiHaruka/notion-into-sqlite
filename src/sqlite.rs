@@ -4,7 +4,7 @@ use crate::{
     notion_database::{NotionDatabaseSchema, NotionPropertyType},
     notion_pages::{NotionPage, NotionPropertyValue},
 };
-use rusqlite::{params_from_iter, Connection, Result};
+use rusqlite::{params, params_from_iter, Connection, Result};
 
 pub static PAGE_METADATA_TABLE: &str = "page_metadata";
 pub static PAGE_PROPERTIES_TABLE: &str = "pages";
@@ -47,6 +47,7 @@ impl Sqlite<'_> {
     }
 
     pub fn create_tables(&self) -> Result<()> {
+        // Create page properties table
         let table_definition = self.table_definitin_from();
         let sql = format!(
             "CREATE TABLE {table_name} ({id_column} TEXT PRIMARY KEY, {definition})",
@@ -56,10 +57,19 @@ impl Sqlite<'_> {
         );
         debug!("{}", sql);
         self.conn.execute(&sql, [])?;
+
+        // Create page metadata table
+        let sql = format!(
+            "CREATE TABLE {table_name} (id TEXT PRIMARY KEY, url TEXT)",
+            table_name = PAGE_METADATA_TABLE,
+        );
+        debug!("{}", sql);
+        self.conn.execute(&sql, [])?;
         Ok(())
     }
 
     pub fn insert(&self, page: &NotionPage) -> Result<()> {
+        // Insert properties of page
         let mut property_names = vec![PAGE_ID_COLUMN];
         for name in page.properties.keys() {
             property_names.push(name);
@@ -75,6 +85,14 @@ impl Sqlite<'_> {
             }
         }));
         debug!("Parameters: {:?}", sql_params);
+        self.conn.execute(&sql, sql_params)?;
+
+        // Insert page metadata
+        let sql = format!(
+            "INSERT INTO {table_name} (id, url) VALUES (?1, ?2)",
+            table_name = PAGE_METADATA_TABLE,
+        );
+        let sql_params = params![page.id, page.url];
         self.conn.execute(&sql, sql_params)?;
 
         Ok(())

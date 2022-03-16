@@ -28,6 +28,7 @@ impl ToSql for NotionPropertyValue {
 pub struct NotionPage {
     pub id: String,
     pub properties: HashMap<String, NotionPropertyValue>,
+    pub url: String,
 }
 
 #[derive(Debug)]
@@ -49,6 +50,7 @@ impl NotionPageBuilder<'_> {
 
     fn from(&self, json_entry: &Map<String, Value>) -> Option<NotionPage> {
         let id = json_entry.get("id")?.as_str()?.to_string();
+        let url = json_entry.get("url")?.as_str()?.to_string();
         let properties_object = json_entry.get("properties")?.as_object()?;
         let properties = properties_object
             .iter()
@@ -76,7 +78,11 @@ impl NotionPageBuilder<'_> {
             })
             .collect::<HashMap<String, NotionPropertyValue>>();
 
-        Some(NotionPage { id, properties })
+        Some(NotionPage {
+            id,
+            properties,
+            url,
+        })
     }
 }
 
