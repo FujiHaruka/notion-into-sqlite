@@ -25,7 +25,7 @@ impl NotionClient {
         Ok(schema)
     }
 
-    pub fn get_all_entries(
+    pub fn get_all_pages(
         &self,
         database_id: &str,
         schema: &NotionDatabaseSchema,

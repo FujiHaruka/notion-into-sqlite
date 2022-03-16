@@ -19,12 +19,12 @@ pub fn main() {
 
     let client = NotionClient { api_key };
     let schema = client.get_database(&database_id).unwrap();
-    let list = client.get_all_entries(&database_id, &schema).unwrap();
+    let pages = client.get_all_pages(&database_id, &schema).unwrap();
 
     let sqlite = Sqlite::new("notion.db", &schema).unwrap();
     sqlite.create_table().unwrap();
 
-    for item in list {
-        sqlite.insert(&item).unwrap();
+    for page in pages {
+        sqlite.insert(&page).unwrap();
     }
 }
