@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     notion_database::{NotionDatabaseSchema, NotionPropertyType},
-    notion_list::{NotionEntry, NotionPropertyValue},
+    notion_pages::{NotionEntry, NotionPropertyValue},
 };
 use rusqlite::{params_from_iter, Connection, Result};
 

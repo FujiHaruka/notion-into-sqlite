@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use crate::notion_database::{parse_database_schema, NotionDatabaseSchema};
-use crate::notion_list::{parse_notion_list, NotionEntry};
+use crate::notion_pages::{parse_notion_list, NotionEntry};
 
 pub struct NotionClient {
     pub api_key: String,

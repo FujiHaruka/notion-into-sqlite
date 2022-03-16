@@ -8,7 +8,7 @@ use std::fs;
 
 use common::fixtures;
 use notion_into_sqlite::notion_database::parse_database_schema;
-use notion_into_sqlite::notion_list::{NotionEntry, NotionPropertyValue};
+use notion_into_sqlite::notion_pages::{NotionEntry, NotionPropertyValue};
 use notion_into_sqlite::sqlite::Sqlite;
 use std::error::Error;
 

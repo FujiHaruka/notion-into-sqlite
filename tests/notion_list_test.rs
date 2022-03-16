@@ -4,7 +4,7 @@ extern crate notion_into_sqlite;
 
 use common::fixtures;
 use notion_into_sqlite::notion_database::parse_database_schema;
-use notion_into_sqlite::notion_list::{parse_notion_list, NotionPropertyValue};
+use notion_into_sqlite::notion_pages::{parse_notion_list, NotionPropertyValue};
 use std::error::Error;
 
 #[test]

@@ -1,7 +1,7 @@
 pub mod json_util;
 pub mod notion_client;
 pub mod notion_database;
-pub mod notion_list;
+pub mod notion_pages;
 pub mod sqlite;
 
 #[macro_use]
