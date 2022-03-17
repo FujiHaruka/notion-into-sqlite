@@ -93,6 +93,23 @@ fn it_inserts_notion_entry() -> Result<(), Box<dyn Error>> {
             ("Age".to_string(), NotionPropertyValue::Number(5.0)),
         ]),
         url: "https://www.notion.so/xxxx".to_string(),
+        created_time: "2022-03-12T00:15:00.000Z".to_string(),
+        created_by: serde_json::from_str(
+            r#"{
+            "object": "user",
+            "id": "9d069f8b-6223-4853-b7eb-8fe3dfe7d389"
+        }"#,
+        )
+        .unwrap(),
+        last_edited_time: "2022-03-12T00:16:00.000Z".to_string(),
+        last_edited_by: serde_json::from_str(
+            r#"{
+            "object": "user",
+            "id": "9d069f8b-6223-4853-b7eb-8fe3dfe7d389"
+        }"#,
+        )
+        .unwrap(),
+        archived: false,
     };
     sqlite.insert(&page)?;
 
@@ -109,17 +126,20 @@ fn it_inserts_notion_entry() -> Result<(), Box<dyn Error>> {
     assert_eq!(name, "Meu");
     assert_eq!(age, 5.0);
 
-    let (page_id, url): (String, String) = sqlite.conn.query_row(
-        format!(
-            r#"SELECT id, url from {table_name}"#,
-            table_name = PAGE_METADATA_TABLE
-        )
-        .as_str(),
-        [],
-        |row| Ok((row.get(0)?, row.get(1)?)),
-    )?;
+    let (page_id, url, created_time, created_by): (String, String, String, String) =
+        sqlite.conn.query_row(
+            format!(
+                r#"SELECT id, url, created_time, created_by from {table_name}"#,
+                table_name = PAGE_METADATA_TABLE
+            )
+            .as_str(),
+            [],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+        )?;
     assert_eq!(page_id, "xxxx");
     assert_eq!(url, "https://www.notion.so/xxxx");
+    assert_eq!(created_time, "2022-03-12T00:15:00.000Z");
+    assert!(serde_json::from_str::<serde_json::Value>(&created_by).is_ok());
 
     Ok(())
 }

@@ -29,6 +29,11 @@ pub struct NotionPage {
     pub id: String,
     pub properties: HashMap<String, NotionPropertyValue>,
     pub url: String,
+    pub created_time: String,
+    pub created_by: Value,
+    pub last_edited_time: String,
+    pub last_edited_by: Value,
+    pub archived: bool,
 }
 
 #[derive(Debug)]
@@ -50,7 +55,14 @@ impl NotionPageBuilder<'_> {
 
     fn from(&self, json_entry: &Map<String, Value>) -> Option<NotionPage> {
         let id = json_entry.get("id")?.as_str()?.to_string();
+
         let url = json_entry.get("url")?.as_str()?.to_string();
+        let created_time = json_entry.get("created_time")?.to_string();
+        let created_by = json_entry.get("created_by")?.clone();
+        let last_edited_time = json_entry.get("last_edited_time")?.to_string();
+        let last_edited_by = json_entry.get("last_edited_by")?.clone();
+        let archived = json_entry.get("archived")?.as_bool()?;
+
         let properties_object = json_entry.get("properties")?.as_object()?;
         let properties = properties_object
             .iter()
@@ -82,6 +94,11 @@ impl NotionPageBuilder<'_> {
             id,
             properties,
             url,
+            created_time,
+            created_by,
+            last_edited_by,
+            last_edited_time,
+            archived,
         })
     }
 }

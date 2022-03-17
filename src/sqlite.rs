@@ -50,7 +50,10 @@ impl Sqlite<'_> {
         // Create page properties table
         let table_definition = self.table_definitin_from();
         let sql = format!(
-            "CREATE TABLE {table_name} ({id_column} TEXT PRIMARY KEY, {definition})",
+            "CREATE TABLE {table_name} (
+                {id_column} TEXT PRIMARY KEY,
+                {definition}
+            )",
             table_name = PAGE_PROPERTIES_TABLE,
             id_column = PAGE_ID_COLUMN,
             definition = table_definition,
@@ -60,7 +63,15 @@ impl Sqlite<'_> {
 
         // Create page metadata table
         let sql = format!(
-            "CREATE TABLE {table_name} (id TEXT PRIMARY KEY, url TEXT)",
+            "CREATE TABLE {table_name} (
+                id TEXT PRIMARY KEY,
+                url TEXT,
+                created_time TEXT,
+                created_by JSON,
+                last_edited_time TEXT,
+                last_edited_by JSON,
+                archived BOOLEAN
+            )",
             table_name = PAGE_METADATA_TABLE,
         );
         debug!("{}", sql);
@@ -89,10 +100,26 @@ impl Sqlite<'_> {
 
         // Insert page metadata
         let sql = format!(
-            "INSERT INTO {table_name} (id, url) VALUES (?1, ?2)",
+            "INSERT INTO {table_name} (
+                id,
+                url,
+                created_time,
+                created_by,
+                last_edited_time,
+                last_edited_by,
+                archived
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
             table_name = PAGE_METADATA_TABLE,
         );
-        let sql_params = params![page.id, page.url];
+        let sql_params = params![
+            page.id,
+            page.url,
+            page.created_time,
+            page.created_by.to_string(),
+            page.last_edited_time,
+            page.last_edited_by.to_string(),
+            page.archived
+        ];
         self.conn.execute(&sql, sql_params)?;
 
         Ok(())
