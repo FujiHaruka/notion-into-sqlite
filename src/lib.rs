@@ -9,22 +9,49 @@ extern crate log;
 
 use crate::notion_client::NotionClient;
 use crate::sqlite::Sqlite;
-use std::env;
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct Args {
+    /// Notion API key
+    #[clap(long)]
+    api_key: String,
+
+    /// Notion database ID
+    #[clap(long)]
+    database_id: String,
+
+    /// Output path of sqlite database
+    #[clap(long, default_value = "notion.db")]
+    output: String,
+}
 
 pub fn main() {
     env_logger::init();
 
-    let api_key = env::var("NOTION_API_KEY").unwrap();
-    let database_id = env::var("NOTION_DATABASE_ID").unwrap();
+    let args = Args::parse();
+    let api_key = args.api_key;
+    let database_id = args.database_id;
+    let output = args.output;
+
+    // TODO: check output path
 
     let client = NotionClient { api_key };
-    let schema = client.get_database(&database_id).unwrap();
-    let pages = client.get_all_pages(&database_id, &schema).unwrap();
 
-    let sqlite = Sqlite::new("notion.db", &schema).unwrap();
-    sqlite.create_tables().unwrap();
+    let schema = client
+        .get_database(&database_id)
+        .expect("Failed to fetch database schema:");
+    let pages = client
+        .get_all_pages(&database_id, &schema)
+        .expect("Failed to fetch pages");
+
+    let sqlite = Sqlite::new(&output, &schema).expect("Failed to connect to sqlite");
+    sqlite.create_tables().expect("Failed to craete tables");
 
     for page in pages {
-        sqlite.insert(&page).unwrap();
+        sqlite
+            .insert(&page)
+            .expect("Failed to insert pages to sqlite");
     }
 }
