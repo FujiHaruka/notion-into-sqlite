@@ -34,10 +34,8 @@ impl fmt::Display for InvalidDatabaseObjectError {
 impl Error for InvalidDatabaseObjectError {}
 
 pub fn parse_database_schema(
-    database_resp_json: &str,
+    database_resp: &Value,
 ) -> Result<NotionDatabaseSchema, Box<dyn Error>> {
-    let database_resp = serde_json::from_str::<Value>(database_resp_json)?;
-
     validate_object_type(&database_resp)?;
 
     let raw_properties = database_resp

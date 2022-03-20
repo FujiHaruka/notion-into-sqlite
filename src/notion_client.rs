@@ -1,5 +1,7 @@
+use serde_json::Value;
 use std::error::Error;
 
+use crate::json_util::{dig_json, JsonKey};
 use crate::notion_database::{parse_database_schema, NotionDatabaseSchema};
 use crate::notion_pages::{parse_notion_page_list, NotionPage};
 
@@ -17,8 +19,10 @@ impl NotionClient {
             .header("Authorization", "Bearer ".to_string() + &self.api_key)
             .header("Notion-Version", "2022-02-22")
             .send()?
-            .text()?;
+            .json::<Value>()?;
         info!("Request done.");
+
+        self.validate_response(&resp)?;
 
         let schema = parse_database_schema(&resp)?;
         info!("Database schema: {:?}", schema);
@@ -50,8 +54,10 @@ impl NotionClient {
                 .header("Notion-Version", "2022-02-22")
                 .body(query)
                 .send()?
-                .text()?;
+                .json::<Value>()?;
             info!("Request done.");
+
+            self.validate_response(&resp)?;
 
             let (mut pages, _next_cursor) = parse_notion_page_list(schema, &resp)?;
             info!("Pages: {:?}", pages);
@@ -67,5 +73,21 @@ impl NotionClient {
         }
 
         Ok(all_pages)
+    }
+
+    fn validate_response(&self, resp: &Value) -> Result<(), String> {
+        let json_keys = vec![JsonKey::String("object")];
+        let object_field = dig_json(resp, &json_keys)
+            .and_then(|o| o.as_str())
+            .ok_or_else(|| format!("Unexpected response from Notion API: {}", resp.to_string()))?;
+
+        if object_field == "error" {
+            Err(format!(
+                "Error response from Notion API: {}",
+                resp.to_string(),
+            ))
+        } else {
+            Ok(())
+        }
     }
 }

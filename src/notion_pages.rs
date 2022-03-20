@@ -115,10 +115,8 @@ impl Error for InvalidListObjectError {}
 
 pub fn parse_notion_page_list(
     schema: &NotionDatabaseSchema,
-    query_resp_json: &str,
+    query_resp: &Value,
 ) -> Result<(Vec<NotionPage>, Option<String>), Box<dyn Error>> {
-    let query_resp = serde_json::from_str::<Value>(query_resp_json)?;
-
     validate_object_type(&query_resp)?;
 
     let next_cursor = get_next_cursor(&query_resp);

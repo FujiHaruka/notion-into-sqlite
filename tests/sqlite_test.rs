@@ -27,7 +27,8 @@ fn setup(database_path: &str) {
 fn it_creates_tables() -> Result<(), Box<dyn Error>> {
     setup(DATABASE_PATH);
 
-    let schema = parse_database_schema(fixtures::NOTION_DATABASE_JSON)?;
+    let json = serde_json::from_str::<serde_json::Value>(fixtures::NOTION_DATABASE_JSON)?;
+    let schema = parse_database_schema(&json)?;
     let sqlite = Sqlite::new(DATABASE_PATH, &schema)?;
     sqlite.create_tables()?;
 
@@ -59,7 +60,8 @@ fn it_creates_tables() -> Result<(), Box<dyn Error>> {
 fn it_creates_table_when_column_name_includes_double_quote() -> Result<(), Box<dyn Error>> {
     setup(DATABASE_PATH);
 
-    let schema = parse_database_schema(fixtures::NOTION_DATABASE_IRREGULAR_JSON)?;
+    let json = serde_json::from_str::<serde_json::Value>(fixtures::NOTION_DATABASE_IRREGULAR_JSON)?;
+    let schema = parse_database_schema(&json)?;
     let sqlite = Sqlite::new(DATABASE_PATH, &schema)?;
     sqlite.create_tables()?;
 
@@ -79,7 +81,8 @@ fn it_creates_table_when_column_name_includes_double_quote() -> Result<(), Box<d
 fn it_inserts_notion_entry() -> Result<(), Box<dyn Error>> {
     setup(DATABASE_PATH);
 
-    let schema = parse_database_schema(fixtures::NOTION_DATABASE_JSON)?;
+    let json = serde_json::from_str::<serde_json::Value>(fixtures::NOTION_DATABASE_JSON)?;
+    let schema = parse_database_schema(&json)?;
     let sqlite = Sqlite::new(DATABASE_PATH, &schema)?;
     sqlite.create_tables()?;
 

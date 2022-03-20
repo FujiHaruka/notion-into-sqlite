@@ -41,7 +41,7 @@ pub fn main() {
 
     let schema = client
         .get_database(&database_id)
-        .expect("Failed to fetch database schema:");
+        .expect("Failed to fetch database schema");
     let pages = client
         .get_all_pages(&database_id, &schema)
         .expect("Failed to fetch pages");

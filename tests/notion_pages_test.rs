@@ -9,8 +9,10 @@ use std::error::Error;
 
 #[test]
 fn it_parses_notion_page_list() -> Result<(), Box<dyn Error>> {
-    let schema = parse_database_schema(fixtures::NOTION_DATABASE_JSON)?;
-    let (pages, next_cursor) = parse_notion_page_list(&schema, fixtures::NOTION_LIST_JSON)?;
+    let json = serde_json::from_str::<serde_json::Value>(fixtures::NOTION_DATABASE_JSON)?;
+    let schema = parse_database_schema(&json)?;
+    let pages_json = serde_json::from_str::<serde_json::Value>(fixtures::NOTION_LIST_JSON)?;
+    let (pages, next_cursor) = parse_notion_page_list(&schema, &pages_json)?;
     assert_eq!(next_cursor.unwrap(), "e6c9af10-44ec-4a48-a969-156ba5438ff0");
     assert_eq!(pages.len(), 1);
 

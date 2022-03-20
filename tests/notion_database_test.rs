@@ -8,7 +8,8 @@ use std::error::Error;
 
 #[test]
 fn it_parses_database_json() -> Result<(), Box<dyn Error>> {
-    let schema = parse_database_schema(fixtures::NOTION_DATABASE_JSON)?;
+    let json = serde_json::from_str::<serde_json::Value>(fixtures::NOTION_DATABASE_JSON)?;
+    let schema = parse_database_schema(&json)?;
     let properties = schema.properties;
     assert_eq!(properties.len(), 3);
 
