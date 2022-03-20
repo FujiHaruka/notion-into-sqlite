@@ -36,7 +36,7 @@ impl Error for InvalidDatabaseObjectError {}
 pub fn parse_database_schema(
     database_resp: &Value,
 ) -> Result<NotionDatabaseSchema, Box<dyn Error>> {
-    validate_object_type(&database_resp)?;
+    validate_object_type(database_resp)?;
 
     let raw_properties = database_resp
         .as_object()

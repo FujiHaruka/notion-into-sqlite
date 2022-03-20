@@ -117,12 +117,12 @@ pub fn parse_notion_page_list(
     schema: &NotionDatabaseSchema,
     query_resp: &Value,
 ) -> Result<(Vec<NotionPage>, Option<String>), Box<dyn Error>> {
-    validate_object_type(&query_resp)?;
+    validate_object_type(query_resp)?;
 
-    let next_cursor = get_next_cursor(&query_resp);
+    let next_cursor = get_next_cursor(query_resp);
 
     let results_json_keys = vec![JsonKey::String("results")];
-    let results = dig_json(&query_resp, &results_json_keys)
+    let results = dig_json(query_resp, &results_json_keys)
         .and_then(|results| results.as_array())
         .map(|results| {
             results

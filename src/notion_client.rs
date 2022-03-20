@@ -79,13 +79,10 @@ impl NotionClient {
         let json_keys = vec![JsonKey::String("object")];
         let object_field = dig_json(resp, &json_keys)
             .and_then(|o| o.as_str())
-            .ok_or_else(|| format!("Unexpected response from Notion API: {}", resp.to_string()))?;
+            .ok_or_else(|| format!("Unexpected response from Notion API: {}", resp))?;
 
         if object_field == "error" {
-            Err(format!(
-                "Error response from Notion API: {}",
-                resp.to_string(),
-            ))
+            Err(format!("Error response from Notion API: {}", resp,))
         } else {
             Ok(())
         }
