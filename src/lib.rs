@@ -47,7 +47,7 @@ pub fn main() {
         .expect("Failed to fetch pages");
 
     let sqlite = Sqlite::new(&output, &schema).expect("Failed to connect to sqlite");
-    sqlite.create_tables().expect("Failed to craete tables");
+    sqlite.create_tables().expect("Failed to create tables");
 
     for page in pages {
         sqlite
