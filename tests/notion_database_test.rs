@@ -29,3 +29,13 @@ fn it_parses_database_json() -> Result<(), Box<dyn Error>> {
     assert_eq!(age_property.property_type, NotionPropertyType::Select);
     Ok(())
 }
+
+#[test]
+fn it_parses_database_json_with_all_property_types() -> Result<(), Box<dyn Error>> {
+    let json = serde_json::from_str::<serde_json::Value>(fixtures::NOTION_DATABASE_ALL_TYPES_JSON)?;
+    let schema = parse_database_schema(&json)?;
+    let properties = schema.properties;
+    assert_eq!(properties.len(), 19);
+
+    Ok(())
+}

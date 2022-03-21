@@ -35,3 +35,19 @@ fn it_parses_notion_page_list() -> Result<(), Box<dyn Error>> {
     );
     Ok(())
 }
+
+#[test]
+fn it_parses_notion_page_list_with_all_types() -> Result<(), Box<dyn Error>> {
+    let json = serde_json::from_str::<serde_json::Value>(fixtures::NOTION_DATABASE_ALL_TYPES_JSON)?;
+    let schema = parse_database_schema(&json)?;
+    let pages_json =
+        serde_json::from_str::<serde_json::Value>(fixtures::NOTION_LIST_ALL_TYPES_JSON)?;
+    let (pages, _) = parse_notion_page_list(&schema, &pages_json)?;
+    assert_eq!(pages.len(), 1);
+
+    let entry = pages.first().unwrap();
+    assert_eq!(entry.id, "ce4593d9-0cfb-4659-8012-12594b723312");
+    assert_eq!(entry.properties.len(), 19);
+
+    Ok(())
+}
