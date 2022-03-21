@@ -1,10 +1,10 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::Path};
 
 use crate::{
     notion_database::{NotionDatabaseSchema, NotionPropertyType},
     notion_pages::{NotionPage, NotionPropertyValue},
 };
-use rusqlite::{params, params_from_iter, Connection, Result};
+use rusqlite::{params, params_from_iter, Connection, Result as SqliteResult};
 
 pub static PAGE_METADATA_TABLE: &str = "page_metadata";
 pub static PAGE_PROPERTIES_TABLE: &str = "pages";
@@ -36,7 +36,7 @@ pub struct Sqlite<'a> {
     column_names: ColumnNames,
 }
 impl Sqlite<'_> {
-    pub fn new<'a>(path: &str, schema: &'a NotionDatabaseSchema) -> Result<Sqlite<'a>> {
+    pub fn new<'a>(path: &str, schema: &'a NotionDatabaseSchema) -> SqliteResult<Sqlite<'a>> {
         let conn = Connection::open(path)?;
         let column_names = ColumnNames::new(schema);
         Ok(Sqlite {
@@ -46,7 +46,23 @@ impl Sqlite<'_> {
         })
     }
 
-    pub fn create_tables(&self) -> Result<()> {
+    /// Check if database file can be created
+    pub fn validate_database_path(path_str: &str) -> SqliteResult<(), String> {
+        let path = Path::new(path_str);
+        let parent = path.parent().unwrap();
+
+        if !parent.is_dir() {
+            return Err(format!("Is not a directory: {}", parent.to_str().unwrap()));
+        }
+
+        if path.exists() {
+            Err(format!("Already exists: {}", path_str))
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn create_tables(&self) -> SqliteResult<()> {
         // Create page properties table
         let table_definition = self.table_definitin_from();
         let sql = format!(
@@ -79,7 +95,7 @@ impl Sqlite<'_> {
         Ok(())
     }
 
-    pub fn insert(&self, page: &NotionPage) -> Result<()> {
+    pub fn insert(&self, page: &NotionPage) -> SqliteResult<()> {
         // Insert properties of page
         let mut property_names = vec![PAGE_ID_COLUMN];
         for name in page.properties.keys() {
@@ -169,5 +185,23 @@ impl Sqlite<'_> {
             columns = columns_formatted.join(", "),
             values = placeholders.join(", ")
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn validate_database_path() {
+        fs::create_dir("tmp").ok();
+
+        let valid_path = "./tmp/a.db";
+        let result = Sqlite::validate_database_path(valid_path);
+        assert!(result.is_ok());
+        let invalid_path = "tmp/foo/bar/a.db";
+        let result = Sqlite::validate_database_path(invalid_path);
+        assert!(result.is_err());
     }
 }

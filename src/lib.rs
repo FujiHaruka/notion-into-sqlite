@@ -35,7 +35,7 @@ pub fn main() {
     let database_id = args.database_id;
     let output = args.output;
 
-    // TODO: check output path
+    Sqlite::validate_database_path(&output).expect("Failed to create a database file");
 
     let client = NotionClient { api_key };
 
