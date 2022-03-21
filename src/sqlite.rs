@@ -157,6 +157,7 @@ impl Sqlite<'_> {
                     NotionPropertyType::Number => "REAL",
                     NotionPropertyType::Select => "TEXT",
                     NotionPropertyType::Other => "TEXT",
+                    _ => "TEXT",
                 };
                 format!(r#""{column}" {data_type}"#)
             })

@@ -68,11 +68,7 @@ impl NotionPageBuilder<'_> {
             .filter_map(|(key, property)| {
                 let property_schema = self.schema.properties.get(key)?;
                 let value: NotionPropertyValue = match property_schema.property_type {
-                    NotionPropertyType::Title => NotionPropertyValue::Text(
-                        dig_json(property, &self.title_json_path)?
-                            .as_str()?
-                            .to_string(),
-                    ),
+                    NotionPropertyType::RichText => NotionPropertyValue::Json(property.clone()),
                     NotionPropertyType::Number => NotionPropertyValue::Number(
                         dig_json(property, &self.number_json_path)?.as_f64()?,
                     ),
@@ -81,6 +77,28 @@ impl NotionPageBuilder<'_> {
                             .as_str()?
                             .to_string(),
                     ),
+                    NotionPropertyType::MultiSelect => NotionPropertyValue::Json(property.clone()),
+                    NotionPropertyType::Date => NotionPropertyValue::Json(property.clone()),
+                    NotionPropertyType::Formula => NotionPropertyValue::Json(property.clone()),
+                    NotionPropertyType::Relation => NotionPropertyValue::Json(property.clone()),
+                    NotionPropertyType::Rollup => NotionPropertyValue::Json(property.clone()),
+                    NotionPropertyType::Title => NotionPropertyValue::Text(
+                        dig_json(property, &self.title_json_path)?
+                            .as_str()?
+                            .to_string(),
+                    ),
+                    NotionPropertyType::People => NotionPropertyValue::Json(property.clone()),
+                    NotionPropertyType::Files => NotionPropertyValue::Json(property.clone()),
+                    NotionPropertyType::Checkbox => NotionPropertyValue::Json(property.clone()),
+                    NotionPropertyType::Url => NotionPropertyValue::Json(property.clone()),
+                    NotionPropertyType::Email => NotionPropertyValue::Json(property.clone()),
+                    NotionPropertyType::PhoneNumber => NotionPropertyValue::Json(property.clone()),
+                    NotionPropertyType::CreatedTime => NotionPropertyValue::Json(property.clone()),
+                    NotionPropertyType::CreatedBy => NotionPropertyValue::Json(property.clone()),
+                    NotionPropertyType::LastEditedTime => {
+                        NotionPropertyValue::Json(property.clone())
+                    }
+                    NotionPropertyType::LastEditedBy => NotionPropertyValue::Json(property.clone()),
                     NotionPropertyType::Other => NotionPropertyValue::Json(
                         property.get(&property_schema.property_raw_type)?.clone(),
                     ),

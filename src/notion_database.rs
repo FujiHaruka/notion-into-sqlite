@@ -2,11 +2,32 @@ use anyhow::{anyhow, Result};
 use serde_json::Value;
 use std::collections::HashMap;
 
+/// Types of property values
+/// See https://developers.notion.com/reference/property-value-object
+/// > Possible values are "rich_text", "number", "select", "multi_select", "date",
+/// > "formula", "relation", "rollup", "title", "people", "files", "checkbox","url",
+/// > "email", "phone_number", "created_time", "created_by", "last_edited_time", and "last_edited_by".
 #[derive(Debug, PartialEq)]
 pub enum NotionPropertyType {
-    Title,
+    RichText,
     Number,
     Select,
+    MultiSelect,
+    Date,
+    Formula,
+    Relation,
+    Rollup,
+    Title,
+    People,
+    Files,
+    Checkbox,
+    Url,
+    Email,
+    PhoneNumber,
+    CreatedTime,
+    CreatedBy,
+    LastEditedTime,
+    LastEditedBy,
     Other,
 }
 
@@ -38,9 +59,25 @@ pub fn parse_database_schema(database_resp: &Value) -> Result<NotionDatabaseSche
             let name = property.get("name")?.as_str()?;
             let property_raw_type = property.get("type")?.as_str()?;
             let property_type = match property_raw_type {
-                "title" => NotionPropertyType::Title,
-                "select" => NotionPropertyType::Select,
+                "rich_text" => NotionPropertyType::RichText,
                 "number" => NotionPropertyType::Number,
+                "select" => NotionPropertyType::Select,
+                "multi_select" => NotionPropertyType::MultiSelect,
+                "date" => NotionPropertyType::Date,
+                "formula" => NotionPropertyType::Formula,
+                "relation" => NotionPropertyType::Relation,
+                "rollup" => NotionPropertyType::Rollup,
+                "title" => NotionPropertyType::Title,
+                "people" => NotionPropertyType::People,
+                "files" => NotionPropertyType::Files,
+                "checkbox" => NotionPropertyType::Checkbox,
+                "url" => NotionPropertyType::Url,
+                "email" => NotionPropertyType::Email,
+                "phone_number" => NotionPropertyType::PhoneNumber,
+                "created_time" => NotionPropertyType::CreatedTime,
+                "created_by" => NotionPropertyType::CreatedBy,
+                "last_edited_time" => NotionPropertyType::LastEditedTime,
+                "last_edited_by" => NotionPropertyType::LastEditedBy,
                 _ => NotionPropertyType::Other,
             };
             Some((
