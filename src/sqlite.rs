@@ -4,7 +4,8 @@ use crate::{
     notion_database::{NotionDatabaseSchema, NotionPropertyType},
     notion_pages::{NotionPage, NotionPropertyValue},
 };
-use rusqlite::{params, params_from_iter, Connection, Result as SqliteResult};
+use anyhow::{anyhow, Result};
+use rusqlite::{params, params_from_iter, Connection};
 
 pub static PAGE_METADATA_TABLE: &str = "page_metadata";
 pub static PAGE_PROPERTIES_TABLE: &str = "pages";
@@ -36,7 +37,7 @@ pub struct Sqlite<'a> {
     column_names: ColumnNames,
 }
 impl Sqlite<'_> {
-    pub fn new<'a>(path: &str, schema: &'a NotionDatabaseSchema) -> SqliteResult<Sqlite<'a>> {
+    pub fn new<'a>(path: &str, schema: &'a NotionDatabaseSchema) -> Result<Sqlite<'a>> {
         let conn = Connection::open(path)?;
         let column_names = ColumnNames::new(schema);
         Ok(Sqlite {
@@ -47,22 +48,22 @@ impl Sqlite<'_> {
     }
 
     /// Check if database file can be created
-    pub fn validate_database_path(path_str: &str) -> SqliteResult<(), String> {
+    pub fn validate_database_path(path_str: &str) -> Result<()> {
         let path = Path::new(path_str);
         let parent = path.parent().unwrap();
 
         if !parent.is_dir() {
-            return Err(format!("Is not a directory: {}", parent.to_str().unwrap()));
+            return Err(anyhow!("Is not a directory: {}", parent.to_str().unwrap()));
         }
 
         if path.exists() {
-            Err(format!("Already exists: {}", path_str))
+            Err(anyhow!("Already exists: {}", path_str))
         } else {
             Ok(())
         }
     }
 
-    pub fn create_tables(&self) -> SqliteResult<()> {
+    pub fn create_tables(&self) -> Result<()> {
         // Create page properties table
         let table_definition = self.table_definitin_from();
         let sql = format!(
@@ -95,7 +96,7 @@ impl Sqlite<'_> {
         Ok(())
     }
 
-    pub fn insert(&self, page: &NotionPage) -> SqliteResult<()> {
+    pub fn insert(&self, page: &NotionPage) -> Result<()> {
         // Insert properties of page
         let mut property_names = vec![PAGE_ID_COLUMN];
         for name in page.properties.keys() {

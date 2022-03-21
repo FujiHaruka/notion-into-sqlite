@@ -1,5 +1,5 @@
+use anyhow::{anyhow, Result};
 use serde_json::Value;
-use std::error::Error;
 
 use crate::json_util::{dig_json, JsonKey};
 use crate::notion_database::{parse_database_schema, NotionDatabaseSchema};
@@ -10,7 +10,7 @@ pub struct NotionClient {
 }
 
 impl NotionClient {
-    pub fn get_database(&self, database_id: &str) -> Result<NotionDatabaseSchema, Box<dyn Error>> {
+    pub fn get_database(&self, database_id: &str) -> Result<NotionDatabaseSchema> {
         let url = format!("https://api.notion.com/v1/databases/{0}", database_id);
         let client = reqwest::blocking::Client::new();
         info!("Requesting database schema. URL: {}", &url);
@@ -33,7 +33,7 @@ impl NotionClient {
         &self,
         database_id: &str,
         schema: &NotionDatabaseSchema,
-    ) -> Result<Vec<NotionPage>, Box<dyn Error>> {
+    ) -> Result<Vec<NotionPage>> {
         let url = format!("https://api.notion.com/v1/databases/{0}/query", database_id);
         let client = reqwest::blocking::Client::new();
 
@@ -75,14 +75,14 @@ impl NotionClient {
         Ok(all_pages)
     }
 
-    fn validate_response(&self, resp: &Value) -> Result<(), String> {
+    fn validate_response(&self, resp: &Value) -> Result<()> {
         let json_keys = vec![JsonKey::String("object")];
         let object_field = dig_json(resp, &json_keys)
             .and_then(|o| o.as_str())
-            .ok_or_else(|| format!("Unexpected response from Notion API: {}", resp))?;
+            .ok_or_else(|| anyhow!("Unexpected response from Notion API: {}", resp))?;
 
         if object_field == "error" {
-            Err(format!("Error response from Notion API: {}", resp,))
+            Err(anyhow!("Error response from Notion API: {}", resp,))
         } else {
             Ok(())
         }

@@ -1,7 +1,6 @@
+use anyhow::{anyhow, Result};
 use serde_json::Value;
 use std::collections::HashMap;
-use std::error::Error;
-use std::fmt;
 
 #[derive(Debug, PartialEq)]
 pub enum NotionPropertyType {
@@ -23,28 +22,14 @@ pub struct NotionDatabaseSchema {
     pub properties: HashMap<String, NotionProperty>,
 }
 
-#[derive(Debug, Clone)]
-struct InvalidDatabaseObjectError(String);
-impl fmt::Display for InvalidDatabaseObjectError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let message = self.0.as_str();
-        write!(f, "Invalid database object. {}", message)
-    }
-}
-impl Error for InvalidDatabaseObjectError {}
-
-pub fn parse_database_schema(
-    database_resp: &Value,
-) -> Result<NotionDatabaseSchema, Box<dyn Error>> {
+pub fn parse_database_schema(database_resp: &Value) -> Result<NotionDatabaseSchema> {
     validate_object_type(database_resp)?;
 
     let raw_properties = database_resp
         .as_object()
         .and_then(|resp| resp.get("properties"))
         .and_then(|prop| prop.as_object())
-        .ok_or_else(|| {
-            InvalidDatabaseObjectError(r#"It must have "properties" object."#.to_string())
-        })?;
+        .ok_or_else(|| anyhow!(r#"It must have "properties" object."#))?;
 
     let properties = raw_properties
         .keys()
@@ -72,22 +57,20 @@ pub fn parse_database_schema(
     Ok(NotionDatabaseSchema { properties })
 }
 
-fn validate_object_type(database_resp: &Value) -> Result<(), InvalidDatabaseObjectError> {
+fn validate_object_type(database_resp: &Value) -> Result<()> {
     let object_field = database_resp
         .as_object()
         .and_then(|o| o.get("object"))
         .and_then(|o| o.as_str())
-        .ok_or_else(|| {
-            InvalidDatabaseObjectError(r#"It must have `"object": "database"`."#.to_string())
-        })?;
+        .ok_or_else(|| anyhow!(r#"It must have `"object": "database"`."#.to_string()))?;
 
     if object_field == "database" {
         Ok(())
     } else {
-        Err(InvalidDatabaseObjectError(format!(
+        Err(anyhow!(
             r#"It must have `"object": "database"`, but was "{}""#,
             object_field
-        )))
+        ))
     }
 }
 

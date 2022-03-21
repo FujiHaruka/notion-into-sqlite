@@ -1,10 +1,9 @@
 use crate::json_util::{dig_json, JsonKey};
 use crate::notion_database::{NotionDatabaseSchema, NotionPropertyType};
+use anyhow::{anyhow, Result};
 use rusqlite::ToSql;
 use serde_json::{Map, Value};
 use std::collections::HashMap;
-use std::error::Error;
-use std::fmt;
 
 #[derive(Debug, PartialEq)]
 pub enum NotionPropertyValue {
@@ -103,20 +102,10 @@ impl NotionPageBuilder<'_> {
     }
 }
 
-#[derive(Debug, Clone)]
-struct InvalidListObjectError(String);
-impl fmt::Display for InvalidListObjectError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let message = self.0.as_str();
-        write!(f, "Invalid list object. {}", message)
-    }
-}
-impl Error for InvalidListObjectError {}
-
 pub fn parse_notion_page_list(
     schema: &NotionDatabaseSchema,
     query_resp: &Value,
-) -> Result<(Vec<NotionPage>, Option<String>), Box<dyn Error>> {
+) -> Result<(Vec<NotionPage>, Option<String>)> {
     validate_object_type(query_resp)?;
 
     let next_cursor = get_next_cursor(query_resp);
@@ -130,9 +119,7 @@ pub fn parse_notion_page_list(
                 .filter_map(|r| r.as_object())
                 .collect::<Vec<_>>()
         })
-        .ok_or_else(|| {
-            InvalidListObjectError(r#"It must have "results" as arrray of objects."#.to_string())
-        })?;
+        .ok_or_else(|| anyhow!(r#"It must have "results" as arrray of objects."#))?;
 
     let page_builder = NotionPageBuilder::new(schema);
     let pages: Vec<NotionPage> = results
@@ -143,19 +130,19 @@ pub fn parse_notion_page_list(
     Ok((pages, next_cursor))
 }
 
-fn validate_object_type(query_resp: &Value) -> Result<(), InvalidListObjectError> {
+fn validate_object_type(query_resp: &Value) -> Result<()> {
     let json_keys = vec![JsonKey::String("object")];
     let object_field = dig_json(query_resp, &json_keys)
         .and_then(|o| o.as_str())
-        .ok_or_else(|| InvalidListObjectError(r#"It must have `"object": "list"`."#.to_string()))?;
+        .ok_or_else(|| anyhow!(r#"It must have `"object": "list"`."#.to_string()))?;
 
     if object_field == "list" {
         Ok(())
     } else {
-        Err(InvalidListObjectError(format!(
+        Err(anyhow!(
             r#"It must have `"object": "list"`, but was "{}""#,
             object_field
-        )))
+        ))
     }
 }
 

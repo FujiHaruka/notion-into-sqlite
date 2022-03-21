@@ -9,6 +9,7 @@ extern crate log;
 
 use crate::notion_client::NotionClient;
 use crate::sqlite::Sqlite;
+use anyhow::{Context, Result};
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -27,7 +28,7 @@ struct Args {
     output: String,
 }
 
-pub fn main() {
+pub fn main() -> Result<()> {
     env_logger::init();
 
     let args = Args::parse();
@@ -35,23 +36,28 @@ pub fn main() {
     let database_id = args.database_id;
     let output = args.output;
 
-    Sqlite::validate_database_path(&output).expect("Failed to create a database file");
+    Sqlite::validate_database_path(&output)
+        .with_context(|| format!("Failed to create a database file {}", output))?;
 
     let client = NotionClient { api_key };
 
     let schema = client
         .get_database(&database_id)
-        .expect("Failed to fetch database schema");
+        .with_context(|| "Failed to fetch database schema")?;
     let pages = client
         .get_all_pages(&database_id, &schema)
-        .expect("Failed to fetch pages");
+        .with_context(|| "Failed to fetch pages")?;
 
-    let sqlite = Sqlite::new(&output, &schema).expect("Failed to connect to sqlite");
-    sqlite.create_tables().expect("Failed to create tables");
+    let sqlite = Sqlite::new(&output, &schema).with_context(|| "Failed to connect to sqlite")?;
+    sqlite
+        .create_tables()
+        .with_context(|| "Failed to create tables")?;
 
     for page in pages {
         sqlite
             .insert(&page)
-            .expect("Failed to insert pages to sqlite");
+            .with_context(|| "Failed to insert pages to sqlite")?;
     }
+
+    Ok(())
 }
