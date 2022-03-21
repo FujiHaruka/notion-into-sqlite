@@ -156,6 +156,7 @@ impl Sqlite<'_> {
                     NotionPropertyType::Title => "TEXT",
                     NotionPropertyType::Number => "REAL",
                     NotionPropertyType::Select => "TEXT",
+                    NotionPropertyType::Checkbox => "BOOLEAN",
                     NotionPropertyType::Other => "TEXT",
                     _ => "TEXT",
                 };
