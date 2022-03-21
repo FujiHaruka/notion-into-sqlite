@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::Path};
+use std::{collections::HashMap, fs, path::Path};
 
 use crate::{
     notion_database::{NotionDatabaseSchema, NotionPropertyType},
@@ -48,18 +48,19 @@ impl Sqlite<'_> {
     }
 
     /// Check if database file can be created
-    pub fn validate_database_path(path_str: &str) -> Result<()> {
-        let path = Path::new(path_str);
-        let parent = path.parent().unwrap();
-
-        if !parent.is_dir() {
-            return Err(anyhow!("Is not a directory: {}", parent.to_str().unwrap()));
+    pub fn validate_database_path(path: &str) -> Result<()> {
+        if Path::new(path).exists() {
+            return Err(anyhow!("{} already exists", path));
         }
 
-        if path.exists() {
-            Err(anyhow!("Already exists: {}", path_str))
-        } else {
-            Ok(())
+        let conn = Connection::open(path)?;
+        match conn.close() {
+            Ok(_) => {
+                // Delete file created by the connection because Connection::open() is just used for validation
+                fs::remove_file(path).ok();
+                Ok(())
+            }
+            Err((_, err)) => Err(anyhow!(err.to_string())),
         }
     }
 
