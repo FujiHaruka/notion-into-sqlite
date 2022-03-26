@@ -10,6 +10,8 @@ use std::process::Command;
 
 use common::helpers::before_db;
 
+// Ignore this locally and run only CI
+#[ignore]
 #[test]
 fn snapshot_test() -> Result<(), Box<dyn Error>> {
     let api_key = env::var("NOTION_API_KEY")?;

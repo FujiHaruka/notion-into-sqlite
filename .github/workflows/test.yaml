@@ -36,4 +36,4 @@ jobs:
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
         with:
           command: test
-          args: --all-features
+          args: --include-ignored
