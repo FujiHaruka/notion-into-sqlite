@@ -3,11 +3,9 @@ mod common;
 extern crate notion_into_sqlite;
 
 use rusqlite::params;
-use serial_test::serial;
 use std::collections::HashMap;
-use std::fs;
 
-use common::fixtures;
+use common::{fixtures, helpers};
 use notion_into_sqlite::notion_database::parse_database_schema;
 use notion_into_sqlite::notion_pages::{NotionPage, NotionPropertyValue};
 use notion_into_sqlite::sqlite::{
@@ -15,21 +13,14 @@ use notion_into_sqlite::sqlite::{
 };
 use std::error::Error;
 
-static DATABASE_PATH: &str = "tmp/test.db";
-
-fn setup(database_path: &str) {
-    fs::remove_file(database_path).ok();
-    fs::create_dir("tmp").ok();
-}
-
 #[test]
-#[serial]
 fn it_creates_tables() -> Result<(), Box<dyn Error>> {
-    setup(DATABASE_PATH);
+    let database_path = "tmp/test1.db";
+    helpers::before_db(database_path);
 
     let json = serde_json::from_str::<serde_json::Value>(fixtures::NOTION_DATABASE_JSON)?;
     let schema = parse_database_schema(&json)?;
-    let sqlite = Sqlite::new(DATABASE_PATH, &schema)?;
+    let sqlite = Sqlite::new(database_path, &schema)?;
     sqlite.create_tables()?;
 
     let table_def_sql: String = sqlite.conn.query_row(
@@ -56,13 +47,13 @@ fn it_creates_tables() -> Result<(), Box<dyn Error>> {
 }
 
 #[test]
-#[serial]
 fn it_creates_table_when_column_name_includes_double_quote() -> Result<(), Box<dyn Error>> {
-    setup(DATABASE_PATH);
+    let database_path = "tmp/test2.db";
+    helpers::before_db(database_path);
 
     let json = serde_json::from_str::<serde_json::Value>(fixtures::NOTION_DATABASE_IRREGULAR_JSON)?;
     let schema = parse_database_schema(&json)?;
-    let sqlite = Sqlite::new(DATABASE_PATH, &schema)?;
+    let sqlite = Sqlite::new(database_path, &schema)?;
     sqlite.create_tables()?;
 
     let (table_name, sql): (String, String) =
@@ -77,13 +68,13 @@ fn it_creates_table_when_column_name_includes_double_quote() -> Result<(), Box<d
 }
 
 #[test]
-#[serial]
 fn it_inserts_notion_entry() -> Result<(), Box<dyn Error>> {
-    setup(DATABASE_PATH);
+    let database_path = "tmp/test3.db";
+    helpers::before_db(database_path);
 
     let json = serde_json::from_str::<serde_json::Value>(fixtures::NOTION_DATABASE_JSON)?;
     let schema = parse_database_schema(&json)?;
-    let sqlite = Sqlite::new(DATABASE_PATH, &schema)?;
+    let sqlite = Sqlite::new(database_path, &schema)?;
     sqlite.create_tables()?;
 
     let page = NotionPage {
