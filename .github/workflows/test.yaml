@@ -31,6 +31,9 @@ jobs:
           command: clippy
           args: -- -D warnings
       - uses: actions-rs/cargo@v1
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
         with:
           command: test
           args: --all-features
