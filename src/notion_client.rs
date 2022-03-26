@@ -42,6 +42,10 @@ impl NotionClient {
         loop {
             let mut query = json!({
                 "page_size": 10i32,
+                "sorts": [{
+                    "timestamp": "created_time",
+                    "direction": "ascending",
+                }]
             });
             if let Some(cursor) = (&next_cursor).as_ref() {
                 query
