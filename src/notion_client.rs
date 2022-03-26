@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use serde_json::Value;
+use serde_json::{json, Value};
 
 use crate::json_util::{dig_json, JsonKey};
 use crate::notion_database::{parse_database_schema, NotionDatabaseSchema};
@@ -40,19 +40,24 @@ impl NotionClient {
         let mut next_cursor: Option<String> = None;
         let mut all_pages: Vec<NotionPage> = vec![];
         loop {
-            let next_cursor_json =
-                next_cursor.map_or("null".to_string(), |cursor| format!(r#""{0}""#, cursor));
-            let query = format!(
-                r#"{{ "page_size": 50, "start_cursor": {0} }}"#,
-                next_cursor_json
-            );
+            let mut query = json!({
+                "page_size": 10i32,
+            });
+            if let Some(cursor) = (&next_cursor).as_ref() {
+                query
+                    .as_object_mut()
+                    .unwrap()
+                    .insert("start_cursor".into(), cursor.clone().into());
+            }
+            let query_str = query.to_string();
 
-            info!("Requesting query: URL: {}, query: {}", &url, &query);
+            info!("Requesting query: URL: {}, query: {}", &url, &query_str);
             let resp = client
                 .post(&url)
                 .header("Authorization", "Bearer ".to_string() + &self.api_key)
                 .header("Notion-Version", "2022-02-22")
-                .body(query)
+                .header("Content-Type", "application/json")
+                .body(query_str)
                 .send()?
                 .json::<Value>()?;
             info!("Request done.");
@@ -60,7 +65,7 @@ impl NotionClient {
             self.validate_response(&resp)?;
 
             let (mut pages, _next_cursor) = parse_notion_page_list(schema, &resp)?;
-            info!("Pages: {:?}", pages);
+            info!("Pages: {:?}", pages.len());
             all_pages.append(&mut pages);
             next_cursor = _next_cursor;
 
