@@ -27,3 +27,7 @@ Or you can install via cargo.
 ```
 cargo install notion-into-sqlite
 ```
+
+## Development
+
+Release is managed by GitHub Actions. When a new tag is created, workflows for release will be triggered. Cross pre-built binaries will be uploaded to the release page, and a new version of crate will be released.
