@@ -1,7 +1,7 @@
 [package]
 name = "notion-into-sqlite"
 version = "0.1.0"
-description = "Download Notion's database and save it locally into SQLite"
+description = "Download your Notion's database and save it locally into SQLite"
 edition = "2021"
 license-file = "LICENSE"
 repository = "https://github.com/FujiHaruka/notion-into-sqlite"
