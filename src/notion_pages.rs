@@ -101,11 +101,9 @@ impl NotionPageBuilder<'_> {
                     NotionPropertyType::CreatedTime => NotionPropertyValue::Text(
                         property.get("created_time")?.as_str()?.to_string(),
                     ),
-                    NotionPropertyType::CreatedBy => NotionPropertyValue::Json(property.clone()),
                     NotionPropertyType::LastEditedTime => NotionPropertyValue::Text(
                         property.get("last_edited_time")?.as_str()?.to_string(),
                     ),
-                    NotionPropertyType::LastEditedBy => NotionPropertyValue::Json(property.clone()),
                     NotionPropertyType::Other => NotionPropertyValue::Json(property.clone()),
                     _ => NotionPropertyValue::Json(
                         property.get(&property_schema.property_raw_type)?.clone(),
