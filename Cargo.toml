@@ -6,6 +6,10 @@ edition = "2021"
 license-file = "LICENSE"
 repository = "https://github.com/FujiHaruka/notion-into-sqlite"
 keywords = ["Notion", "SQLite"]
+include = [
+    "src/*.rs",
+    "Cargo.toml",
+]
 
 [dependencies]
 reqwest = { version = "0.11", features = ["blocking", "json"] }
