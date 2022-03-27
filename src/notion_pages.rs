@@ -57,9 +57,9 @@ impl NotionPageBuilder<'_> {
         let id = json_entry.get("id")?.as_str()?.to_string();
 
         let url = json_entry.get("url")?.as_str()?.to_string();
-        let created_time = json_entry.get("created_time")?.to_string();
+        let created_time = json_entry.get("created_time")?.as_str()?.to_owned();
         let created_by = json_entry.get("created_by")?.clone();
-        let last_edited_time = json_entry.get("last_edited_time")?.to_string();
+        let last_edited_time = json_entry.get("last_edited_time")?.as_str()?.to_owned();
         let last_edited_by = json_entry.get("last_edited_by")?.clone();
         let archived = json_entry.get("archived")?.as_bool()?;
 

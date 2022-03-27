@@ -11,6 +11,8 @@ use std::process::Command;
 use common::helpers::before_db;
 
 // Ignore this locally and run only CI
+// To update snapshot file,
+// > sqlite3 tmp/snapshot1.db -header "select page_id, LastEditedTime, RichText, Relation, Phone, CreatedTime, Email, Formula, LastEditedBy, Files, Name, MultiSelect, Date, People, \"Select\", CreatedBy, Number, Checkbox, WebSite, Rollup, id, url, created_time, created_by, last_edited_time, last_edited_by, archived from pages inner join page_metadata on pages.page_id = page_metadata.id" > tests/fixtures/snapshot1.txt
 #[ignore]
 #[test]
 fn snapshot_test() -> Result<(), Box<dyn Error>> {
